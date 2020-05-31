@@ -643,6 +643,12 @@ config ARCH_OMAP1
 	help
 	  Support for older TI OMAP1 (omap7xx, omap15xx or omap16xx)
 
+config ARCH_QIN2440
+	bool "Sam-Hotiky QIN2440"
+	select CPU_ARM920T
+	help
+	  Support for QIN2440
+
 endchoice
 
 menu "Multiple platform selection"

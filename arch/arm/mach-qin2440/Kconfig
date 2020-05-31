@@ -1,0 +1,15 @@
+if ARCH_QIN2440
+
+menu "QIN2440 Configuration"
+
+config QIN_PRINTF
+	bool "the debug function: qin_printf()"
+	default n
+	select DEBUG_KERNEL
+	select DEBUG_LL
+	help
+	  Use the qin_printf() to debug
+
+endmenu
+
+endif

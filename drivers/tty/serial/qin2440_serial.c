@@ -791,9 +791,9 @@ static int __init qin2440_init(void)
 
 static void __exit qin2440_exit(void)
 {
-	periphral_clock_disable(CLKSRC_UART0);
-	periphral_clock_disable(CLKSRC_UART1);
-	periphral_clock_disable(CLKSRC_UART2);
+	peripheral_clock_disable(CLKSRC_UART0);
+	peripheral_clock_disable(CLKSRC_UART1);
+	peripheral_clock_disable(CLKSRC_UART2);
 
 	platform_driver_unregister(&qin2440_platform_driver);
 	uart_unregister_driver(&qin2440_driver);

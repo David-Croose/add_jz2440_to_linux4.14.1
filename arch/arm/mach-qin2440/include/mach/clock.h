@@ -24,8 +24,9 @@
 #define CLKSRC_SLEEP     (1 << 3)
 #define CLKSRC_IDLE      (1 << 2)
 
-void clock_enable(unsigned int clknum);
-void clock_disable(unsigned int clknum);
+void peripheral_clock_enable(unsigned int id);
+void peripheral_clock_disable(unsigned int id);
+void s3c2440_clock_init(void);
 
 #endif
 

@@ -5,8 +5,8 @@
 #include <asm-arm/memory.h>
 #include <asm-arm/sizes.h>
 #include <asm-arm/io.h>
-#include <asm/arch/hardware.h>
-#include <asm/arch/virt_addr.h>
+#include <mach/hardware.h>
+#include <mach/virt_addr.h>
 
 static struct map_desc qin2440_iodesc[] __initdata = {
 	[0] = {

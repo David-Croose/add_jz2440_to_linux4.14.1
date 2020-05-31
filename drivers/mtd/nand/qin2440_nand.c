@@ -187,7 +187,7 @@ static int __devexit qin2440_nand_remove(struct platform_device *pdev)
 	/*
 	 * disable the nand clock
 	 */
-	periphral_clock_disable(CLKSRC_NAND);
+	peripheral_clock_disable(CLKSRC_NAND);
 
 	/*
 	 * disable nand

@@ -1,3 +1,10 @@
+#include <mach/virt_addr.h>
+#include <mach/clock.h>
+#include <linux/irqreturn.h>
+#include <linux/interrupt.h>
+#include <linux/irq.h>
+#include <asm/mach/time.h>
+#include <asm-generic/param.h>
 
 /**
  * Timer input clock Frequency = PCLK / {prescaler value+1} / {divider value}
@@ -14,7 +21,7 @@ static void timer4_init(unsigned int nms)
 	unsigned int counter;
 	unsigned int tmp;
 
-	clock_enable(CLKSRC_PWMTIMER);
+	peripheral_clock_enable(CLKSRC_PWMTIMER);
 
 	if(pclk != 50000000)
 	{

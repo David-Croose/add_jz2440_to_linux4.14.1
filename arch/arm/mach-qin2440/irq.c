@@ -1,6 +1,17 @@
 #include <mach/irq.h>
-
-
+#include <mach/virt_addr.h>
+#include <linux/compiler.h>
+#include <linux/irq.h>
+#include <asm-generic/io.h>
+#include <linux/printk.h>
+#include <errno.h>
+#include <irqchip/chained_irq.h>
+#include <asm/bitops.h>
+#include <linux/irqdomain.h>
+#include <linux/irqdesc.h>
+#include <linux/linkage.h>
+#include <asm/ptrace.h>
+#include <asm/exception.h>
 
 struct irq_priv_data {
     struct irq_domain *domain;
@@ -213,19 +224,19 @@ void qin2440_init_irq(void)
      * setup irq domain
      */
     parent_domain = irq_domain_add_legacy(NULL, PARENTIRQ_TOTAL,
-                                            16,
-                                            IRQ_EINT0,
-                                            &s3c24xx_irq_ops);
+									16,
+									IRQ_EINT0,
+									&s3c24xx_irq_ops);
 
     subeint_domain = irq_domain_add_legacy(NULL, SUBIRQ_EINT_TOTAL,
-                                            16 + PARENTIRQ_TOTAL,
-                                            IRQ_EINT4,
-                                            &s3c24xx_irq_ops);
+									16 + PARENTIRQ_TOTAL,
+									IRQ_EINT4,
+									&s3c24xx_irq_ops);
 
     submisc_domain = irq_domain_add_legacy(NULL, SUBIRQ_MISC_TOTAL,
-                                            16 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
-                                            IRQ_UART0_RXD,
-                                            &s3c24xx_irq_ops);
+									16 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
+									IRQ_UART0_RXD,
+									&s3c24xx_irq_ops);
 
     /*
      * fill the irq chip, handler and chain-handler
@@ -241,8 +252,9 @@ void qin2440_init_irq(void)
         irq_set_chip_data(virq, &irq_parent);
 
         /* setup the chain handler */
-        if (hwirq == IRQ_EINT4_7 || hwirq == IRQ_EINT8_23 || hwirq == IRQ_INT_CAM
-            || hwirq == IRQ_WDT_AC97 || hwirq == IRQ_UART2 || hwirq == IRQ_UART1
+        if (hwirq == IRQ_EINT4_7 || hwirq == IRQ_EINT8_23
+			|| hwirq == IRQ_INT_CAM || hwirq == IRQ_WDT_AC97
+			|| hwirq == IRQ_UART2 || hwirq == IRQ_UART1
             || hwirq == IRQ_UART0 || hwirq == IRQ_ADC) {
                 irq_set_chained_handler(virq, s3c_irq_demux);
         }

@@ -1707,6 +1707,19 @@ config SERIAL_OWL_CONSOLE
 	  Say 'Y' here if you wish to use Actions Semiconductor S500/S900 UART
 	  as the system console.
 
+config SERIAL_QIN2440
+	bool "QIN2440 serial support"
+	select SERIAL_CORE
+	help
+	  Enable QIN2440 on-chip-serial port
+
+config SERIAL_QIN2440_CONSOLE
+	bool "QIN2440 serial colsole port"
+	depends on SERIAL_QIN2440
+	select SERIAL_CORE_CONSOLE
+	help
+	  Enable QIN2440 debug serial port
+
 endmenu
 
 config SERIAL_MCTRL_GPIO

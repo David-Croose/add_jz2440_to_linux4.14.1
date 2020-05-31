@@ -563,4 +563,10 @@ config MTD_NAND_MTK
 	  Enables support for NAND controller on MTK SoCs.
 	  This controller is found on mt27xx, mt81xx, mt65xx SoCs.
 
+config MTD_NAND_QIN2440
+	bool "Support for NAND Flash QIN2440."
+	depends on ARCH_QIN2440
+	help
+	  Enable support for NAND Flash driver on QIN2440
+
 endif # MTD_NAND

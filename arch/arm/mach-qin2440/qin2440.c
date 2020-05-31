@@ -14,7 +14,7 @@ extern void __init qin2440_init_timer(void)
 extern void __init qin2440_init_irq(void);
 
 MACHINE_START(S3C2440, "QIN2440")
-	.boot_params  = 0x30000000 + 0x100,
+	.atag_offset  = 0x100,
 	.init_time	  = qin2440_init_timer,
 	.map_io       = qin2440_map,
 	.init_irq     = qin2440_init_irq,
