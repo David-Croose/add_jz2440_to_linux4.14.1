@@ -5,11 +5,10 @@
 #include <linux/serial.h>
 #include <linux/console.h>
 #include <linux/kernel.h>
-#include <asm-arm/io.h>
-#include <asm/arch/virt_addr.h>
-#include <asm/arch/hardware.h>
-#include <asm/arch/qin_printf.h>
-#include <asm/arch/clock.h>
+#include <linux/qin2440/virt_addr.h>
+#include <linux/qin2440/hardware.h>
+#include <linux/qin2440/qin_printf.h>
+#include <linux/qin2440/clock.h>
 
 #define QIN2440_TOTAL_PORTS    3
 
