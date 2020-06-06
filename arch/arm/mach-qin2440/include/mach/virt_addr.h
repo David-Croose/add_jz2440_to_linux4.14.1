@@ -31,10 +31,12 @@
 #define __SZ_256M 0x10000000
 #define __SZ_512M 0x20000000
 
+#define VIRT(x)		((void *)(x))
+
 /*
  * The virtual start address
  */
-#define QIN2440_VIRT_ADDR(x)    (0xF6000000 + x * __SZ_512K)
+#define QIN2440_VIRT_ADDR(x)    VIRT((0xF6000000 + (x) * __SZ_512K))
 
 /*
  * Memory Controllers

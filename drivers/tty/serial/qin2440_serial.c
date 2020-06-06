@@ -5,18 +5,19 @@
 #include <linux/serial.h>
 #include <linux/console.h>
 #include <linux/kernel.h>
-#include <linux/qin2440/virt_addr.h>
-#include <linux/qin2440/hardware.h>
-#include <linux/qin2440/qin_printf.h>
-#include <linux/qin2440/clock.h>
+#include <mach/virt_addr.h>
+#include <mach/hardware.h>
+#include <mach/clock.h>
+#include <asm/io.h>
+#include <linux/tty_flip.h>
 
 #define QIN2440_TOTAL_PORTS    3
 
 #define UART_WRITE_REG(val, reg, tail, port)                      \
-	__raw_write##tail(val, reg##0 - __ULCON0 + port->mapbase);
+	__raw_write##tail(val, reg##0 - (unsigned int)__ULCON0 + port->mapbase);
 
 #define UART_READ_REG(reg, tail, port)                            \
-	__raw_read##tail(reg##0 - __ULCON0 + port->mapbase)
+	__raw_read##tail(reg##0 - (unsigned int)__ULCON0 + port->mapbase)
 
 #define S3C2410_UERSTAT_OVERRUN	  (1<<0)
 #define S3C2410_UERSTAT_FRAME	  (1<<2)
@@ -44,7 +45,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 		.port = {
 			.line		= 0,
 			.fifosize	= 64,
-			.mapbase	= __ULCON0,
+			.mapbase	= (unsigned int)__ULCON0,
 			.membase	= __UTXH0,
 			.iotype		= UPIO_MEM,
 			.irq		= IRQ_UART0_RXD,
@@ -59,7 +60,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 		.port = {
 			.line		= 1,
 			.fifosize	= 64,
-			.mapbase	= __ULCON1,
+			.mapbase	= (unsigned int)__ULCON1,
 			.membase	= __UTXH1,
 			.iotype		= UPIO_MEM,
 			.irq		= IRQ_UART1_RXD,
@@ -75,7 +76,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 		.port = {
 			.line		= 2,
 			.fifosize	= 64,
-			.mapbase	= __ULCON2,
+			.mapbase	= (unsigned int)__ULCON2,
 			.membase	= __UTXH2,
 			.iotype		= UPIO_MEM,
 			.irq		= IRQ_UART2_RXD,
@@ -141,7 +142,6 @@ static void uart_rxirq_disable(struct uart_port *port)
 static irqreturn_t qin2440_rx_chars(int irq, void *dev_id)
 {
 	struct uart_port *port = dev_id;
-	struct tty_struct *tty = port->info->tty;
 	unsigned int ch, ufcon, flag, ufstat, uerstat;
 	int max_count = 64;
 
@@ -202,7 +202,7 @@ static irqreturn_t qin2440_rx_chars(int irq, void *dev_id)
 ignore_char:
 		continue;
 	}
-	tty_flip_buffer_push(tty);
+	tty_flip_buffer_push(&port->state->port);
 
 	return IRQ_HANDLED;
 }
@@ -210,7 +210,7 @@ ignore_char:
 static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 {
 	struct uart_port *port = dev_id;
-	struct circ_buf *xmit = &port->info->xmit;
+	struct circ_buf *xmit = &port->state->xmit;
 	int count = 256;
 
 	if(port->x_char) {
@@ -735,7 +735,7 @@ static struct uart_driver qin2440_driver = {
 #endif
 };
 
-static int __devinit qin2440_probe(struct platform_device *pdev)
+static int qin2440_probe(struct platform_device *pdev)
 {
 	int i = pdev->id;
 
@@ -746,7 +746,7 @@ static int __devinit qin2440_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int __devexit qin2440_remove(struct platform_device *pdev)
+static int qin2440_remove(struct platform_device *pdev)
 {
 	struct qin2440_uart *parent_port = platform_get_drvdata(pdev);
 
@@ -758,7 +758,7 @@ static int __devexit qin2440_remove(struct platform_device *pdev)
 
 static struct platform_driver qin2440_platform_driver = {
 	.probe		= qin2440_probe,
-	.remove		= __devexit_p(qin2440_remove),
+	.remove		= qin2440_remove,
 	.driver		= {
 		.name	= "qin2440_uart",
 		.owner	= THIS_MODULE,
@@ -769,19 +769,17 @@ static int __init qin2440_init(void)
 {
 	int rc;
 
-	periphral_clock_enable(CLKSRC_UART0);
-	periphral_clock_enable(CLKSRC_UART1);
-	periphral_clock_enable(CLKSRC_UART2);
+	peripheral_clock_enable(CLKSRC_UART0);
+	peripheral_clock_enable(CLKSRC_UART1);
+	peripheral_clock_enable(CLKSRC_UART2);
 
 	rc = uart_register_driver(&qin2440_driver);
 	if(rc) {
-		qin_printf("uart_register_driver error !\n");
 		return rc;
 	}
 
 	rc = platform_driver_register(&qin2440_platform_driver);
 	if(rc) {
-		qin_printf("platform_driver_register error !\n");
 		return rc;
 	}
 

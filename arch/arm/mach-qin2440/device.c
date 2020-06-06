@@ -2,6 +2,7 @@
 #include <linux/kernel.h>
 #include <linux/mtd/partitions.h>
 #include <linux/platform_device.h>
+#include <linux/init.h>
 #include <mach/more_config.h>
 
 /******************************************************************
@@ -51,8 +52,7 @@ static struct platform_device uart2_device = {
 /******************************************************************
 						the nand flash
 ******************************************************************/
-#ifdef CONFIG_MTD_PARTITIONS
-static struct mtd_partition __initdata qin2440_nand_partition[] = {
+static struct mtd_partition qin2440_nand_partition[] = {
 	/*
 	 * 100ask mtd layout style
 	 */
@@ -77,7 +77,6 @@ static struct mtd_partition __initdata qin2440_nand_partition[] = {
 		.size	= MTDPART_SIZ_FULL,
 	}
 };
-#endif
 
 static struct qin2440_mtd_info mtd_info = {
 	.total = ARRAY_SIZE(qin2440_nand_partition),
@@ -94,23 +93,21 @@ static struct platform_device nand_device = {
 	.resource = nand_resource,
 	.num_resources = ARRAY_SIZE(nand_resource),
 	.dev = {
-#ifdef CONFIG_MTD_PARTITIONS
-		.platform_data = &mtd_info,
-#endif
+	.platform_data = &mtd_info,
 	}
 };
 
 /******************************************************************
 						all of the devices
 ******************************************************************/
-static struct platform_device *qin2440_devices[] __initdata = {
+static struct platform_device *qin2440_devices[] = {
 	&uart0_device,
 	&uart1_device,
 	&uart2_device,
 	&nand_device,
 };
 
-void qin2440_register_devices(void)
+void __initdata qin2440_register_devices(void)
 {
 	platform_add_devices(qin2440_devices, ARRAY_SIZE(qin2440_devices));
 }

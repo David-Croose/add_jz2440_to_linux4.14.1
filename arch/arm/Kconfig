@@ -643,6 +643,15 @@ config ARCH_OMAP1
 	help
 	  Support for older TI OMAP1 (omap7xx, omap15xx or omap16xx)
 
+config ARCH_QIN2440
+	bool "QIN2440(JZ2440) base on s3c2440"
+	select ATAGS
+	select CPU_ARM920T
+	select MULTI_IRQ_HANDLER
+	select IRQ_DOMAIN
+	help
+	  A development board base on s3c2440, in fact, it is JZ2440
+
 endchoice
 
 menu "Multiple platform selection"
@@ -855,6 +864,8 @@ source "arch/arm/mach-w90x900/Kconfig"
 source "arch/arm/mach-zx/Kconfig"
 
 source "arch/arm/mach-zynq/Kconfig"
+
+source "arch/arm/mach-qin2440/Kconfig"
 
 # ARMv7-M architecture
 config ARCH_EFM32

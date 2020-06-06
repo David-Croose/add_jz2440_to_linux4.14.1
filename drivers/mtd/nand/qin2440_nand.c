@@ -2,14 +2,14 @@
 #include <linux/module.h>
 #include <linux/platform_device.h>
 #include <linux/slab.h>
-#include <linux/mtd/nand.h>
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/partitions.h>
 #include <linux/kernel.h>
-#include <asm-arm/io.h>
-#include <asm/arch/virt_addr.h>
-#include <asm/arch/clock.h>
-#include <asm/arch/more_config.h>
+#include <linux/mtd/rawnand.h>
+#include <mach/virt_addr.h>
+#include <mach/clock.h>
+#include <mach/more_config.h>
+#include <asm/io.h>
 
 static void qin2440_nand_cmd_ctrl(struct mtd_info *mtd, int cmd, unsigned int ctrl)
 {
@@ -93,9 +93,7 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 	struct nand_chip *nc;
 	int ret = 0;
 	unsigned int tmp;
-#ifdef CONFIG_MTD_PARTITIONS
 	struct qin2440_mtd_info *qin2440_mtd_info = pdev->dev.platform_data;
-#endif
 
 	nc = kzalloc(sizeof(struct nand_chip) + sizeof(struct mtd_info), GFP_KERNEL);
 	if(!nc) {
@@ -110,7 +108,7 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 		/*
 		 * enable the nand clock
 		 */
-		periphral_clock_enable(CLKSRC_NAND);
+		peripheral_clock_enable(CLKSRC_NAND);
 
 		/*
 		 * init nand timming
@@ -152,15 +150,11 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 		goto no_dev;
 	}
 
-#ifdef CONFIG_MTD_PARTITIONS
 	if(qin2440_mtd_info->total <= 0 || !qin2440_mtd_info->partition) {
 		goto no_dev;
 	}
 
-	ret = add_mtd_partitions(mtd, qin2440_mtd_info->partition, qin2440_mtd_info->total);
-#else
-	ret = add_mtd_device(mtd);
-#endif
+	ret = mtd_device_register(mtd, qin2440_mtd_info->partition, qin2440_mtd_info->total);
 
 	if(ret) {
 		nand_release(mtd);
@@ -178,7 +172,7 @@ no_res:
 	return ret;
 }
 
-static int __devexit qin2440_nand_remove(struct platform_device *pdev)
+static int qin2440_nand_remove(struct platform_device *pdev)
 {
 	struct mtd_info *mtd = platform_get_drvdata(pdev);
 	struct nand_chip *nc = mtd->priv;
@@ -204,7 +198,7 @@ static int __devexit qin2440_nand_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver qin2440_nand_driver = {
-	.remove		= __devexit_p(qin2440_nand_remove),
+	.remove		= qin2440_nand_remove,
 	.driver		= {
 		.name	= "qin2440_nand",
 		.owner	= THIS_MODULE,

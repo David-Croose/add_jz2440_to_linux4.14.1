@@ -20,6 +20,7 @@ static void timer4_init(unsigned int nms)
 	unsigned int _divider;
 	unsigned int counter;
 	unsigned int tmp;
+	extern unsigned int pclk;
 
 	peripheral_clock_enable(CLKSRC_PWMTIMER);
 

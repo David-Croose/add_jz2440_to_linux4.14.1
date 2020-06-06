@@ -1,6 +1,6 @@
 #include <linux/init.h>
-#include <asm-arm/mach/arch.h>
-#include <asm-arm/mach-types.h>
+#include <asm/mach/arch.h>
+#include <asm/mach-types.h>
 
 extern void qin2440_register_devices(void);
 
@@ -9,9 +9,9 @@ static void __init qin2440_init_machine(void)
 	qin2440_register_devices();
 }
 
-extern void __init qin2440_map(void);
-extern void __init qin2440_init_timer(void)
-extern void __init qin2440_init_irq(void);
+extern void qin2440_map(void);
+extern void qin2440_init_timer(void);
+extern void qin2440_init_irq(void);
 
 MACHINE_START(S3C2440, "QIN2440")
 	.atag_offset  = 0x100,

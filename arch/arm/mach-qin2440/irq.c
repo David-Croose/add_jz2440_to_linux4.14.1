@@ -1,17 +1,16 @@
-#include <mach/irq.h>
+#include <mach/irqs.h>
 #include <mach/virt_addr.h>
 #include <linux/compiler.h>
 #include <linux/irq.h>
 #include <asm-generic/io.h>
 #include <linux/printk.h>
-#include <errno.h>
-#include <irqchip/chained_irq.h>
 #include <asm/bitops.h>
 #include <linux/irqdomain.h>
 #include <linux/irqdesc.h>
 #include <linux/linkage.h>
 #include <asm/ptrace.h>
 #include <asm/exception.h>
+#include <linux/irqchip/chained_irq.h>
 
 struct irq_priv_data {
     struct irq_domain *domain;
@@ -19,9 +18,16 @@ struct irq_priv_data {
     void __iomem *reg_pending;
     void __iomem *reg_mask;
     unsigned int irq_start;
+	unsigned int hwirq;			/* TODO  is it good? */
     struct irq_priv_data *parent;
     struct irq_priv_data *child;
 };
+
+static struct irq_priv_data irq_parent_nosub;
+static struct irq_priv_data irq_parent_eintsub;
+static struct irq_priv_data irq_parent_miscsub;
+static struct irq_priv_data irq_subeint;
+static struct irq_priv_data irq_submisc;
 
 static struct irq_priv_data irq_parent_nosub = {
     .domain = NULL,    /* will be implemented in the latter */
@@ -40,7 +46,7 @@ static struct irq_priv_data irq_parent_eintsub = {
     .reg_mask = __INTMSK,
     .irq_start = IRQ_EINT0,
     .parent = NULL,
-    .child = &irq_subeint;
+    .child = &irq_subeint,
 };
 
 static struct irq_priv_data irq_parent_miscsub = {
@@ -50,7 +56,7 @@ static struct irq_priv_data irq_parent_miscsub = {
     .reg_mask = __INTMSK,
     .irq_start = IRQ_EINT0,
     .parent = NULL,
-    .child = &irq_submisc;
+    .child = &irq_submisc,
 };
 
 static struct irq_priv_data irq_subeint = {
@@ -145,8 +151,9 @@ static void s3c_irq_demux(struct irq_desc *desc)
 	unsigned int n, virq;
 	unsigned long src, msk;
 
-    if (!d->child)
+    if (!d->child) {
         return;
+	}
 
 	chained_irq_enter(chip, desc);
 
@@ -160,7 +167,7 @@ static void s3c_irq_demux(struct irq_desc *desc)
 		n = __ffs(src);
 		src &= ~(1 << n);
 		virq = irq_find_mapping(d->child->domain, d->child->irq_start + n);
-		generic_handle_irq(irq);
+		generic_handle_irq(virq);
 	}
 
 	chained_irq_exit(chip, desc);
@@ -175,8 +182,6 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
         pnd = readl_relaxed(__INTPND);
         if (!pnd)
             continue;
-
-        writel_relaxed(__SRCPND);
 
         /* We have a problem that the INTOFFSET register does not always
         * show one interrupt. Occasionally we get two interrupts through
@@ -194,7 +199,7 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
         if (!(pnd & (1 << offset)))
             offset =  __ffs(pnd);
 
-        handle_domain_irq(&irq_parent_nosub.domain, IRQ_EINT0 + offset, regs);
+        handle_domain_irq(irq_parent_nosub.domain, IRQ_EINT0 + offset, regs);
         break;
 	} while (1);
 }
@@ -211,12 +216,11 @@ static const struct irq_domain_ops s3c24xx_irq_ops = {
 	.xlate = irq_domain_xlate_twocell,
 };
 
-void qin2440_init_irq(void)
+void __init qin2440_init_irq(void)
 {
     struct irq_domain *parent_domain;
     struct irq_domain *subeint_domain;
     struct irq_domain *submisc_domain;
-    struct irq_priv_data *d;
     unsigned int virq;
     unsigned int  hwirq;
 
@@ -226,17 +230,17 @@ void qin2440_init_irq(void)
     parent_domain = irq_domain_add_legacy(NULL, PARENTIRQ_TOTAL,
 									16,
 									IRQ_EINT0,
-									&s3c24xx_irq_ops);
+									&s3c24xx_irq_ops, NULL);
 
     subeint_domain = irq_domain_add_legacy(NULL, SUBIRQ_EINT_TOTAL,
 									16 + PARENTIRQ_TOTAL,
 									IRQ_EINT4,
-									&s3c24xx_irq_ops);
+									&s3c24xx_irq_ops, NULL);
 
     submisc_domain = irq_domain_add_legacy(NULL, SUBIRQ_MISC_TOTAL,
 									16 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
 									IRQ_UART0_RXD,
-									&s3c24xx_irq_ops);
+									&s3c24xx_irq_ops, NULL);
 
     /*
      * fill the irq chip, handler and chain-handler
@@ -249,7 +253,7 @@ void qin2440_init_irq(void)
     for (hwirq = IRQ_EINT0; hwirq <= IRQ_ADC; hwirq++) {
         virq = irq_find_mapping(parent_domain, hwirq);
         irq_set_chip_and_handler(virq, &s3c_irq_level_chip, handle_level_irq);
-        irq_set_chip_data(virq, &irq_parent);
+        irq_set_chip_data(virq, &irq_parent_nosub);
 
         /* setup the chain handler */
         if (hwirq == IRQ_EINT4_7 || hwirq == IRQ_EINT8_23
