@@ -12,34 +12,9 @@
 #include <asm/exception.h>
 #include <linux/irqchip/chained_irq.h>
 
-#define INVALIRQ		(unsigned int)(-1)
-
-#define IRQITEM(son, parent, dom)   \
-	[(son)] = {                     \
-		.hwirq = (son),             \
-		.parent_hwirq = (parent),   \
-		.more = (dom),              \
-	}
-
-struct dom_priv_data {
-    struct irq_domain *domain;
-    void __iomem *reg_pending;
-    void __iomem *reg_mask;
-    unsigned int irq_start;
-    struct dom_priv_data *parent;
-    int (*get_child)(unsigned int hwirq, struct irq_domain **child_dom,
-			unsigned int *child_hwirq);
-};
-
-struct virq_priv_data {
-	unsigned int hwirq;
-	unsigned int parent_hwirq;
-	struct dom_priv_data *more;
-};
-
-static struct dom_priv_data irq_parent;
-static struct dom_priv_data irq_subeint;
-static struct dom_priv_data irq_submisc;
+struct dom_priv_data irq_parent;
+struct dom_priv_data irq_subeint;
+struct dom_priv_data irq_submisc;
 static int get_child(unsigned int hwirq, struct irq_domain **child_dom,
 						unsigned int *child_hwirq);
 
@@ -115,7 +90,7 @@ static struct virq_priv_data virq_tbl[] = {
 	IRQITEM(IRQ_EINT0, INVALIRQ, &irq_parent),
 };
 
-static struct dom_priv_data irq_parent = {
+struct dom_priv_data irq_parent = {
     .domain = NULL,    /* will be implemented in the latter */
     .reg_pending = __INTPND,
     .reg_mask = __INTMSK,
@@ -124,7 +99,7 @@ static struct dom_priv_data irq_parent = {
 	.get_child = get_child,
 };
 
-static struct dom_priv_data irq_subeint = {
+struct dom_priv_data irq_subeint = {
     .domain = NULL,    /* will be implemented in the latter */
     .reg_pending = __EINTPEND,
     .reg_mask = __EINTMASK,
@@ -133,7 +108,7 @@ static struct dom_priv_data irq_subeint = {
 	.get_child = NULL,
 };
 
-static struct dom_priv_data irq_submisc = {
+struct dom_priv_data irq_submisc = {
     .domain = NULL,    /* will be implemented in the latter */
     .reg_pending = __SUBSRCPND,
     .reg_mask = __INTSUBMSK,
@@ -315,11 +290,6 @@ void __init qin2440_init_irq(void)
     unsigned int virq;
     unsigned int hwirq;
 
-	////////////////////////////////////////////////////////////////
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 0x31;
-	////////////////////////////////////////////////////////////////
-
     /*
      * setup irq domain
      */
@@ -375,6 +345,6 @@ void __init qin2440_init_irq(void)
 
 	////////////////////////////////////////////////////////////////
 	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 0x34;
+	*(volatile unsigned char *)__UTXH0 = 'i';
 	////////////////////////////////////////////////////////////////
 }

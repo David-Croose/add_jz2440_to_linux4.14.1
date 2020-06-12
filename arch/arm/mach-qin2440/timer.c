@@ -2,6 +2,7 @@
 #include <mach/clock.h>
 #include <linux/irqreturn.h>
 #include <linux/interrupt.h>
+#include <linux/irqdomain.h>
 #include <linux/irq.h>
 #include <asm/mach/time.h>
 #include <asm-generic/param.h>
@@ -153,12 +154,15 @@ static struct irqaction timer_irq = {
 
 void __init qin2440_init_timer(void)
 {
-	////////////////////////////////////////////////////////////////
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 0x31;
-	////////////////////////////////////////////////////////////////
+	extern struct dom_priv_data irq_parent;
+	unsigned int virq = irq_find_mapping(irq_parent.domain, IRQ_TIMER4);
 
 	s3c2440_clock_init();
-	setup_irq(IRQ_TIMER4, &timer_irq);
+	setup_irq(virq, &timer_irq);
 	timer4_init(1000 / HZ);
+
+	////////////////////////////////////////////////////////////////
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 't';
+	////////////////////////////////////////////////////////////////
 }

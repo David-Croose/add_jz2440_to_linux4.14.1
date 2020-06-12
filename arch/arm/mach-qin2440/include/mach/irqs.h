@@ -1,6 +1,8 @@
 #ifndef _ASM_ARCH_IRQ_H_
 #define _ASM_ARCH_IRQ_H_
 
+#include <linux/compiler.h>
+
 /*
  * sub misc irq
  */
@@ -91,6 +93,34 @@
 #define PARENTIRQ_TOTAL  	  (IRQ_ADC - IRQ_EINT0 + 1)
 #define SUBIRQ_MISC_TOTAL     (IRQ_WDT_AC97_AC97 - IRQ_UART0_RXD + 1)
 #define SUBIRQ_EINT_TOTAL     (IRQ_EINT23 - IRQ_EINT4 + 1)
+
+/*
+ * user's stuff
+ */
+#define INVALIRQ		(unsigned int)(-1)
+
+#define IRQITEM(son, parent, dom)   \
+	[(son)] = {                     \
+		.hwirq = (son),             \
+		.parent_hwirq = (parent),   \
+		.more = (dom),              \
+	}
+
+struct dom_priv_data {
+    struct irq_domain *domain;
+    void __iomem *reg_pending;
+    void __iomem *reg_mask;
+    unsigned int irq_start;
+    struct dom_priv_data *parent;
+    int (*get_child)(unsigned int hwirq, struct irq_domain **child_dom,
+			unsigned int *child_hwirq);
+};
+
+struct virq_priv_data {
+	unsigned int hwirq;
+	unsigned int parent_hwirq;
+	struct dom_priv_data *more;
+};
 
 #endif
 

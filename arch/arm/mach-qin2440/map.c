@@ -153,7 +153,7 @@ void __init qin2440_map(void)
 
 	////////////////////////////////////////////////////////////////
 	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 0x30;
+	*(volatile unsigned char *)__UTXH0 = 'm';
 	////////////////////////////////////////////////////////////////
 }
 
