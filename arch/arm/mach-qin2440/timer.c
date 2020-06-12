@@ -153,6 +153,11 @@ static struct irqaction timer_irq = {
 
 void __init qin2440_init_timer(void)
 {
+	////////////////////////////////////////////////////////////////
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 0x31;
+	////////////////////////////////////////////////////////////////
+
 	s3c2440_clock_init();
 	setup_irq(IRQ_TIMER4, &timer_irq);
 	timer4_init(1000 / HZ);

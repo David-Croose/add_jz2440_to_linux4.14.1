@@ -315,6 +315,11 @@ void __init qin2440_init_irq(void)
     unsigned int virq;
     unsigned int hwirq;
 
+	////////////////////////////////////////////////////////////////
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 0x31;
+	////////////////////////////////////////////////////////////////
+
     /*
      * setup irq domain
      */
@@ -367,4 +372,9 @@ void __init qin2440_init_irq(void)
      * setup the irq entry
      */
     set_handle_irq(s3c24xx_handle_irq);
+
+	////////////////////////////////////////////////////////////////
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 0x34;
+	////////////////////////////////////////////////////////////////
 }

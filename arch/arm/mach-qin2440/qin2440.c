@@ -1,11 +1,17 @@
 #include <linux/init.h>
 #include <asm/mach/arch.h>
 #include <asm/mach-types.h>
+#include <mach/virt_addr.h>
 
 extern void qin2440_register_devices(void);
 
 static void __init qin2440_init_machine(void)
 {
+	////////////////////////////////////////////////////////////////
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 0x32;
+	////////////////////////////////////////////////////////////////
+
 	qin2440_register_devices();
 }
 
