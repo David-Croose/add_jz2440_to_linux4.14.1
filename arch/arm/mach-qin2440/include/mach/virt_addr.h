@@ -1,42 +1,14 @@
 #ifndef _QIN2440_VIRT_ADDR_H_
 #define _QIN2440_VIRT_ADDR_H_
 
-#define __SZ_16	0x00000010
-#define __SZ_32	0x00000020
-#define __SZ_64	0x00000040
-#define __SZ_128 0x00000080
-#define __SZ_256 0x00000100
-#define __SZ_512 0x00000200
-
-#define __SZ_1K   0x00000400
-#define __SZ_2K   0x00000800
-#define __SZ_4K   0x00001000
-#define __SZ_8K   0x00002000
-#define __SZ_16K  0x00004000
-#define __SZ_32K  0x00008000
-#define __SZ_64K  0x00010000
-#define __SZ_128K 0x00020000
-#define __SZ_256K 0x00040000
-#define __SZ_512K 0x00080000
-
-#define __SZ_1M   0x00100000
-#define __SZ_2M   0x00200000
-#define __SZ_4M   0x00400000
-#define __SZ_8M   0x00800000
-#define __SZ_16M  0x01000000
-#define __SZ_32M  0x02000000
-#define __SZ_48M  0x03000000
-#define __SZ_64M  0x04000000
-#define __SZ_128M 0x08000000
-#define __SZ_256M 0x10000000
-#define __SZ_512M 0x20000000
+#include <linux/sizes.h>
 
 #define VIRT(x)		((void *)(x))
 
 /*
  * The virtual start address
  */
-#define QIN2440_VIRT_ADDR(x)    VIRT((0xF6000000 + (x) * __SZ_512K))
+#define QIN2440_VIRT_ADDR(x)    VIRT((0xF6000000 + (x) * SZ_4K))
 
 /*
  * Memory Controllers
@@ -227,37 +199,37 @@
 /*
  * UART
  */
-#define __ULCON0   (QIN2440_VIRT_ADDR(8) + 0x0000)
-#define __UCON0    (QIN2440_VIRT_ADDR(8) + 0x0004)
-#define __UFCON0   (QIN2440_VIRT_ADDR(8) + 0x0008)
-#define __UMCON0   (QIN2440_VIRT_ADDR(8) + 0x000C)
-#define __UTRSTAT0 (QIN2440_VIRT_ADDR(8) + 0x0010)
-#define __UERSTAT0 (QIN2440_VIRT_ADDR(8) + 0x0014)
-#define __UFSTAT0  (QIN2440_VIRT_ADDR(8) + 0x0018)
-#define __UMSTAT0  (QIN2440_VIRT_ADDR(8) + 0x001C)
-#define __UTXH0    (QIN2440_VIRT_ADDR(8) + 0x0020)
-#define __URXH0    (QIN2440_VIRT_ADDR(8) + 0x0024)
-#define __UBRDIV0  (QIN2440_VIRT_ADDR(8) + 0x0028)
-#define __ULCON1   (QIN2440_VIRT_ADDR(8) + 0x4000)
-#define __UCON1    (QIN2440_VIRT_ADDR(8) + 0x4004)
-#define __UFCON1   (QIN2440_VIRT_ADDR(8) + 0x4008)
-#define __UMCON1   (QIN2440_VIRT_ADDR(8) + 0x400C)
-#define __UTRSTAT1 (QIN2440_VIRT_ADDR(8) + 0x4010)
-#define __UERSTAT1 (QIN2440_VIRT_ADDR(8) + 0x4014)
-#define __UFSTAT1  (QIN2440_VIRT_ADDR(8) + 0x4018)
-#define __UMSTAT1  (QIN2440_VIRT_ADDR(8) + 0x401C)
-#define __UTXH1    (QIN2440_VIRT_ADDR(8) + 0x4020)
-#define __URXH1    (QIN2440_VIRT_ADDR(8) + 0x4024)
-#define __UBRDIV1  (QIN2440_VIRT_ADDR(8) + 0x4028)
-#define __ULCON2   (QIN2440_VIRT_ADDR(8) + 0x8000)
-#define __UCON2    (QIN2440_VIRT_ADDR(8) + 0x8004)
-#define __UFCON2   (QIN2440_VIRT_ADDR(8) + 0x8008)
-#define __UTRSTAT2 (QIN2440_VIRT_ADDR(8) + 0x8010)
-#define __UERSTAT2 (QIN2440_VIRT_ADDR(8) + 0x8014)
-#define __UFSTAT2  (QIN2440_VIRT_ADDR(8) + 0x8018)
-#define __UTXH2    (QIN2440_VIRT_ADDR(8) + 0x8020)
-#define __URXH2    (QIN2440_VIRT_ADDR(8) + 0x8024)
-#define __UBRDIV2  (QIN2440_VIRT_ADDR(8) + 0x8028)
+#define __ULCON0   (QIN2440_VIRT_ADDR(8) + 0x00)
+#define __UCON0    (QIN2440_VIRT_ADDR(8) + 0x40)
+#define __UFCON0   (QIN2440_VIRT_ADDR(8) + 0x80)
+#define __UMCON0   (QIN2440_VIRT_ADDR(8) + 0xc0)
+#define __UTRSTAT0 (QIN2440_VIRT_ADDR(8) + 0x10)
+#define __UERSTAT0 (QIN2440_VIRT_ADDR(8) + 0x14)
+#define __UFSTAT0  (QIN2440_VIRT_ADDR(8) + 0x18)
+#define __UMSTAT0  (QIN2440_VIRT_ADDR(8) + 0x1c)
+#define __UTXH0    (QIN2440_VIRT_ADDR(8) + 0x20)
+#define __URXH0    (QIN2440_VIRT_ADDR(8) + 0x24)
+#define __UBRDIV0  (QIN2440_VIRT_ADDR(8) + 0x28)
+#define __ULCON1   (QIN2440_VIRT_ADDR(8) + 0x2c)
+#define __UCON1    (QIN2440_VIRT_ADDR(8) + 0x30)
+#define __UFCON1   (QIN2440_VIRT_ADDR(8) + 0x34)
+#define __UMCON1   (QIN2440_VIRT_ADDR(8) + 0x38)
+#define __UTRSTAT1 (QIN2440_VIRT_ADDR(8) + 0x3c)
+#define __UERSTAT1 (QIN2440_VIRT_ADDR(8) + 0x40)
+#define __UFSTAT1  (QIN2440_VIRT_ADDR(8) + 0x44)
+#define __UMSTAT1  (QIN2440_VIRT_ADDR(8) + 0x48)
+#define __UTXH1    (QIN2440_VIRT_ADDR(8) + 0x4c)
+#define __URXH1    (QIN2440_VIRT_ADDR(8) + 0x50)
+#define __UBRDIV1  (QIN2440_VIRT_ADDR(8) + 0x54)
+#define __ULCON2   (QIN2440_VIRT_ADDR(8) + 0x58)
+#define __UCON2    (QIN2440_VIRT_ADDR(8) + 0x5c)
+#define __UFCON2   (QIN2440_VIRT_ADDR(8) + 0x60)
+#define __UTRSTAT2 (QIN2440_VIRT_ADDR(8) + 0x64)
+#define __UERSTAT2 (QIN2440_VIRT_ADDR(8) + 0x68)
+#define __UFSTAT2  (QIN2440_VIRT_ADDR(8) + 0x6c)
+#define __UTXH2    (QIN2440_VIRT_ADDR(8) + 0x70)
+#define __URXH2    (QIN2440_VIRT_ADDR(8) + 0x74)
+#define __UBRDIV2  (QIN2440_VIRT_ADDR(8) + 0x78)
 
 /*
  * PWM Timer
@@ -283,52 +255,52 @@
 /*
  * USB Device
  */
-#define __FUNC_ADDR_REG     (QIN2440_VIRT_ADDR(10) + 0x140)
-#define __PWR_REG           (QIN2440_VIRT_ADDR(10) + 0x144)
-#define __EP_INT_REG        (QIN2440_VIRT_ADDR(10) + 0x148)
-#define __USB_INT_REG       (QIN2440_VIRT_ADDR(10) + 0x158)
-#define __EP_INT_EN_REG     (QIN2440_VIRT_ADDR(10) + 0x15C)
-#define __USB_INT_EN_REG    (QIN2440_VIRT_ADDR(10) + 0x16C)
-#define __FRAME_NUM1_REG    (QIN2440_VIRT_ADDR(10) + 0x170)
-#define __FRAME_NUM2_REG    (QIN2440_VIRT_ADDR(10) + 0x174)
-#define __INDEX_REG         (QIN2440_VIRT_ADDR(10) + 0x178)
-#define __EP0_CSR           (QIN2440_VIRT_ADDR(10) + 0x184)
-#define __IN_CSR1_REG       (QIN2440_VIRT_ADDR(10) + 0x184)
-#define __IN_CSR2_REG       (QIN2440_VIRT_ADDR(10) + 0x188)
-#define __MAXP_REG          (QIN2440_VIRT_ADDR(10) + 0x180)
-#define __OUT_CSR1_REG      (QIN2440_VIRT_ADDR(10) + 0x190)
-#define __OUT_CSR2_REG      (QIN2440_VIRT_ADDR(10) + 0x194)
-#define __OUT_FIFO_CNT1_REG (QIN2440_VIRT_ADDR(10) + 0x198)
-#define __OUT_FIFO_CNT2_REG (QIN2440_VIRT_ADDR(10) + 0x19C)
-#define __EP0_FIFO          (QIN2440_VIRT_ADDR(10) + 0x1C0)
-#define __EP1_FIFO          (QIN2440_VIRT_ADDR(10) + 0x1C4)
-#define __EP2_FIFO          (QIN2440_VIRT_ADDR(10) + 0x1C8)
-#define __EP3_FIFO          (QIN2440_VIRT_ADDR(10) + 0x1CC)
-#define __EP4_FIFO          (QIN2440_VIRT_ADDR(10) + 0x1D0)
-#define __EP1_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x200)
-#define __EP1_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x204)
-#define __EP1_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x208)
-#define __EP1_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x20C)
-#define __EP1_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x210)
-#define __EP1_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x214)
-#define __EP2_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x218)
-#define __EP2_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x21C)
-#define __EP2_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x220)
-#define __EP2_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x224)
-#define __EP2_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x228)
-#define __EP2_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x22C)
-#define __EP3_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x240)
-#define __EP3_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x244)
-#define __EP3_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x248)
-#define __EP3_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x24C)
-#define __EP3_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x250)
-#define __EP3_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x254)
-#define __EP4_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x258)
-#define __EP4_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x25C)
-#define __EP4_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x260)
-#define __EP4_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x264)
-#define __EP4_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x268)
-#define __EP4_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x26C)
+#define __FUNC_ADDR_REG     (QIN2440_VIRT_ADDR(10) + 0x00)
+#define __PWR_REG           (QIN2440_VIRT_ADDR(10) + 0x40)
+#define __EP_INT_REG        (QIN2440_VIRT_ADDR(10) + 0x80)
+#define __USB_INT_REG       (QIN2440_VIRT_ADDR(10) + 0xc0)
+#define __EP_INT_EN_REG     (QIN2440_VIRT_ADDR(10) + 0x10)
+#define __USB_INT_EN_REG    (QIN2440_VIRT_ADDR(10) + 0x14)
+#define __FRAME_NUM1_REG    (QIN2440_VIRT_ADDR(10) + 0x18)
+#define __FRAME_NUM2_REG    (QIN2440_VIRT_ADDR(10) + 0x1c)
+#define __INDEX_REG         (QIN2440_VIRT_ADDR(10) + 0x20)
+#define __EP0_CSR           (QIN2440_VIRT_ADDR(10) + 0x24)
+#define __IN_CSR1_REG       (QIN2440_VIRT_ADDR(10) + 0x28)
+#define __IN_CSR2_REG       (QIN2440_VIRT_ADDR(10) + 0x2c)
+#define __MAXP_REG          (QIN2440_VIRT_ADDR(10) + 0x30)
+#define __OUT_CSR1_REG      (QIN2440_VIRT_ADDR(10) + 0x34)
+#define __OUT_CSR2_REG      (QIN2440_VIRT_ADDR(10) + 0x38)
+#define __OUT_FIFO_CNT1_REG (QIN2440_VIRT_ADDR(10) + 0x3c)
+#define __OUT_FIFO_CNT2_REG (QIN2440_VIRT_ADDR(10) + 0x40)
+#define __EP0_FIFO          (QIN2440_VIRT_ADDR(10) + 0x44)
+#define __EP1_FIFO          (QIN2440_VIRT_ADDR(10) + 0x48)
+#define __EP2_FIFO          (QIN2440_VIRT_ADDR(10) + 0x4c)
+#define __EP3_FIFO          (QIN2440_VIRT_ADDR(10) + 0x50)
+#define __EP4_FIFO          (QIN2440_VIRT_ADDR(10) + 0x54)
+#define __EP1_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x58)
+#define __EP1_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x5c)
+#define __EP1_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x60)
+#define __EP1_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x64)
+#define __EP1_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x68)
+#define __EP1_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x6c)
+#define __EP2_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x70)
+#define __EP2_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x74)
+#define __EP2_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x78)
+#define __EP2_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x7c)
+#define __EP2_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x80)
+#define __EP2_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x84)
+#define __EP3_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0x88)
+#define __EP3_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0x8c)
+#define __EP3_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0x90)
+#define __EP3_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0x94)
+#define __EP3_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0x98)
+#define __EP3_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0x9c)
+#define __EP4_DMA_CON       (QIN2440_VIRT_ADDR(10) + 0xa0)
+#define __EP4_DMA_UNIT      (QIN2440_VIRT_ADDR(10) + 0xa4)
+#define __EP4_DMA_FIFO      (QIN2440_VIRT_ADDR(10) + 0xa8)
+#define __EP4_DMA_TTC_L     (QIN2440_VIRT_ADDR(10) + 0xac)
+#define __EP4_DMA_TTC_M     (QIN2440_VIRT_ADDR(10) + 0xb0)
+#define __EP4_DMA_TTC_H     (QIN2440_VIRT_ADDR(10) + 0xb4)
 
 /*
  * Watchdog Timer
@@ -405,22 +377,22 @@
 /*
  * RTC
  */
-#define __RTCCON  (QIN2440_VIRT_ADDR(15) + 0x40)
-#define __TICNT   (QIN2440_VIRT_ADDR(15) + 0x44)
-#define __RTCALM  (QIN2440_VIRT_ADDR(15) + 0x50)
-#define __ALMSEC  (QIN2440_VIRT_ADDR(15) + 0x54)
-#define __ALMMIN  (QIN2440_VIRT_ADDR(15) + 0x58)
-#define __ALMHOUR (QIN2440_VIRT_ADDR(15) + 0x5C)
-#define __ALMDATE (QIN2440_VIRT_ADDR(15) + 0x60)
-#define __ALMMON  (QIN2440_VIRT_ADDR(15) + 0x64)
-#define __ALMYEAR (QIN2440_VIRT_ADDR(15) + 0x68)
-#define __BCDSEC  (QIN2440_VIRT_ADDR(15) + 0x70)
-#define __BCDMIN  (QIN2440_VIRT_ADDR(15) + 0x74)
-#define __BCDHOUR (QIN2440_VIRT_ADDR(15) + 0x78)
-#define __BCDDATE (QIN2440_VIRT_ADDR(15) + 0x7C)
-#define __BCDDAY  (QIN2440_VIRT_ADDR(15) + 0x80)
-#define __BCDMON  (QIN2440_VIRT_ADDR(15) + 0x84)
-#define __BCDYEAR (QIN2440_VIRT_ADDR(15) + 0x88)
+#define __RTCCON  (QIN2440_VIRT_ADDR(15) + 0x00)
+#define __TICNT   (QIN2440_VIRT_ADDR(15) + 0x40)
+#define __RTCALM  (QIN2440_VIRT_ADDR(15) + 0x80)
+#define __ALMSEC  (QIN2440_VIRT_ADDR(15) + 0xc0)
+#define __ALMMIN  (QIN2440_VIRT_ADDR(15) + 0x10)
+#define __ALMHOUR (QIN2440_VIRT_ADDR(15) + 0x14)
+#define __ALMDATE (QIN2440_VIRT_ADDR(15) + 0x18)
+#define __ALMMON  (QIN2440_VIRT_ADDR(15) + 0x1c)
+#define __ALMYEAR (QIN2440_VIRT_ADDR(15) + 0x20)
+#define __BCDSEC  (QIN2440_VIRT_ADDR(15) + 0x24)
+#define __BCDMIN  (QIN2440_VIRT_ADDR(15) + 0x28)
+#define __BCDHOUR (QIN2440_VIRT_ADDR(15) + 0x2c)
+#define __BCDDATE (QIN2440_VIRT_ADDR(15) + 0x30)
+#define __BCDDAY  (QIN2440_VIRT_ADDR(15) + 0x34)
+#define __BCDMON  (QIN2440_VIRT_ADDR(15) + 0x38)
+#define __BCDYEAR (QIN2440_VIRT_ADDR(15) + 0x3c)
 
 /*
  * A/D Converter

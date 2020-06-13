@@ -122,5 +122,9 @@ struct virq_priv_data {
 	struct dom_priv_data *more;
 };
 
+extern struct dom_priv_data irq_parent;
+extern struct dom_priv_data irq_subeint;
+extern struct dom_priv_data irq_submisc;
+
 #endif
 

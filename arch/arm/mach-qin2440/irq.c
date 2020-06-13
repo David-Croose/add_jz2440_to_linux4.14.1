@@ -12,9 +12,6 @@
 #include <asm/exception.h>
 #include <linux/irqchip/chained_irq.h>
 
-struct dom_priv_data irq_parent;
-struct dom_priv_data irq_subeint;
-struct dom_priv_data irq_submisc;
 static int get_child(unsigned int hwirq, struct irq_domain **child_dom,
 						unsigned int *child_hwirq);
 
