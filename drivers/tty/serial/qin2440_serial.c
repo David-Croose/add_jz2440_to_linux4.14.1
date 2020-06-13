@@ -729,6 +729,14 @@ static struct console qin2440_console = {
 static int __init qin2440_console_init(void)
 {
 	register_console(&qin2440_console);
+
+	////////////////////////////////////////////////////////////////
+	int i;
+	for (i = 0; i < 100; i++) {
+		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+		*(volatile unsigned char *)__UTXH0 = 'c';
+	}
+	////////////////////////////////////////////////////////////////
 	return 0;
 }
 
@@ -754,6 +762,14 @@ static struct uart_driver qin2440_driver = {
 static int qin2440_probe(struct platform_device *pdev)
 {
 	int i = pdev->id;
+
+	////////////////////////////////////////////////////////////////
+	int k;
+	for (k = 0; k < 100; k++) {
+		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+		*(volatile unsigned char *)__UTXH0 = 's';
+	}
+	////////////////////////////////////////////////////////////////
 
 	qin2440_ports[i].port.dev = &pdev->dev;
 	uart_add_one_port(&qin2440_driver,  &qin2440_ports[i].port);
@@ -784,6 +800,9 @@ static struct platform_driver qin2440_platform_driver = {
 static int __init qin2440_init(void)
 {
 	int rc;
+
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 's';
 
 	peripheral_clock_enable(CLKSRC_UART0);
 	peripheral_clock_enable(CLKSRC_UART1);

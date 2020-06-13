@@ -1,6 +1,7 @@
 #include <linux/init.h>
 #include <asm/mach/arch.h>
 #include <asm/mach-types.h>
+#include <mach/clock.h>
 #include <mach/virt_addr.h>
 
 extern void qin2440_register_devices(void);
@@ -8,8 +9,20 @@ extern void qin2440_register_devices(void);
 static void __init qin2440_init_machine(void)
 {
 	////////////////////////////////////////////////////////////////
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 0x32;
+	// GPF5 set output
+	unsigned int tmp;
+	peripheral_clock_enable(CLKSRC_GPIO);
+	tmp = *(volatile unsigned int *)__GPFCON;
+	tmp &= ~((0x3 & 0x3) << (5 * 2));
+	tmp |= (0x1 & 0x3) << (5 * 2);
+	*(volatile unsigned int *)__GPFCON = tmp;
+	*(volatile unsigned int *)__GPFDAT |= 1 << 5;	// off
+
+	int k;
+	for (k = 0; k < 100; k++) {
+		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+		*(volatile unsigned char *)__UTXH0 = 'a';
+	}
 	////////////////////////////////////////////////////////////////
 
 	qin2440_register_devices();

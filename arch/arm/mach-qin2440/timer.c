@@ -1,5 +1,6 @@
 #include <mach/virt_addr.h>
 #include <mach/clock.h>
+#include <mach/irqs.h>
 #include <linux/irqreturn.h>
 #include <linux/interrupt.h>
 #include <linux/irqdomain.h>
@@ -143,7 +144,21 @@ static void timer4_init(unsigned int nms)
 static irqreturn_t
 timer_interrupt(int irq, void *dev_id)
 {
+	///////////////////////////////////////////////
+	static unsigned int n;
+
+	if (n < 90000) {
+		*(volatile unsigned int *)__GPFDAT |= 1 << 4;	// off
+	} else {
+		*(volatile unsigned int *)__GPFDAT &= ~(1 << 4); // up
+	}
+
+	if (++n > 100000)
+		n = 0;
+	///////////////////////////////////////////////
+
 	timer_tick();
+
 	return IRQ_HANDLED;
 }
 
@@ -154,14 +169,23 @@ static struct irqaction timer_irq = {
 
 void __init qin2440_init_timer(void)
 {
-	extern struct dom_priv_data irq_parent;
 	unsigned int virq = irq_find_mapping(irq_parent.domain, IRQ_TIMER4);
+	unsigned int tmp;		// for debug
 
 	s3c2440_clock_init();
 	setup_irq(virq, &timer_irq);
 	timer4_init(1000 / HZ);
 
 	////////////////////////////////////////////////////////////////
+	// GPF4 set output
+	peripheral_clock_enable(CLKSRC_GPIO);
+	tmp = *(volatile unsigned int *)__GPFCON;
+	tmp &= ~((0x3 & 0x3) << (4 * 2));
+	tmp |= (0x1 & 0x3) << (4 * 2);
+	*(volatile unsigned int *)__GPFCON = tmp;
+	/// *(volatile unsigned int *)__GPFDAT &= ~(1 << 4); // up
+	*(volatile unsigned int *)__GPFDAT |= 1 << 4;	// off
+
 	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
 	*(volatile unsigned char *)__UTXH0 = 't';
 	////////////////////////////////////////////////////////////////

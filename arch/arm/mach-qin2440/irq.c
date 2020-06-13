@@ -341,7 +341,10 @@ void __init qin2440_init_irq(void)
     set_handle_irq(s3c24xx_handle_irq);
 
 	////////////////////////////////////////////////////////////////
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 'i';
+	int m;
+	for (m = 0; m < 10; m++) {
+		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+		*(volatile unsigned char *)__UTXH0 = 'i';
+	}
 	////////////////////////////////////////////////////////////////
 }
