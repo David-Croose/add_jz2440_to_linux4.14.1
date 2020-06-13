@@ -5,6 +5,7 @@
 #include <linux/serial.h>
 #include <linux/console.h>
 #include <linux/kernel.h>
+#include <linux/irqdomain.h>
 #include <mach/virt_addr.h>
 #include <mach/hardware.h>
 #include <mach/clock.h>
@@ -48,7 +49,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 			.mapbase	= (unsigned int)__ULCON0,
 			.membase	= __UTXH0,
 			.iotype		= UPIO_MEM,
-			.irq		= IRQ_UART0_RXD,
+			/// .irq		= IRQ_UART0_RXD,
 			.uartclk	= 50000000,
 			.ops		= &qin2440_uart_ops,
 			.flags		= ASYNC_BOOT_AUTOCONF,
@@ -63,7 +64,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 			.mapbase	= (unsigned int)__ULCON1,
 			.membase	= __UTXH1,
 			.iotype		= UPIO_MEM,
-			.irq		= IRQ_UART1_RXD,
+			/// .irq		= IRQ_UART1_RXD,
 			.uartclk	= 50000000,
 			.ops		= &qin2440_uart_ops,
 			.flags		= ASYNC_BOOT_AUTOCONF,
@@ -79,7 +80,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 			.mapbase	= (unsigned int)__ULCON2,
 			.membase	= __UTXH2,
 			.iotype		= UPIO_MEM,
-			.irq		= IRQ_UART2_RXD,
+			/// .irq		= IRQ_UART2_RXD,
 			.uartclk	= 50000000,
 			.ops		= &qin2440_uart_ops,
 			.flags		= ASYNC_BOOT_AUTOCONF,
@@ -313,6 +314,21 @@ static int qin2440_startup(struct uart_port *port)
 {
 	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
 	int ret;
+	unsigned int virq;
+
+	switch (port->line) {
+	case 0:
+		virq = irq_find_mapping(irq_submisc.domain, IRQ_UART0_RXD);
+		break;
+	case 1:
+		virq = irq_find_mapping(irq_submisc.domain, IRQ_UART1_RXD);
+		break;
+	case 2:
+		virq = irq_find_mapping(irq_submisc.domain, IRQ_UART2_RXD);
+		break;
+	default:
+		return -1;
+	};
 
 	ret = request_irq(port->irq, qin2440_rx_chars,
 					  0, "qin2440_uart_rxirq", port);
