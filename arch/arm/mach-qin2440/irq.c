@@ -286,6 +286,15 @@ void __init qin2440_init_irq(void)
     struct irq_domain *submisc_domain;
     unsigned int virq;
     unsigned int hwirq;
+	int i;
+
+	/* make sure the irq pending bits clear out */
+	for (i = 0; i < 3; i++) {
+		__raw_writel(__raw_readl(__SUBSRCPND), __SUBSRCPND);
+		__raw_writel(__raw_readl(__SRCPND),    __SRCPND);
+		__raw_writel(__raw_readl(__INTPND),    __INTPND);
+		__raw_writel(__raw_readl(__EINTPEND),  __EINTPEND);
+	}
 
     /*
      * setup irq domain
