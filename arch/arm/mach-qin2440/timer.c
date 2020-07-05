@@ -7,95 +7,36 @@
 #include <linux/irq.h>
 #include <asm/mach/time.h>
 #include <asm-generic/param.h>
+#include <linux/clockchips.h>
+
+extern unsigned int pclk;
+
+// [0,255]
+#define CONFIG_PRESCALER 249    
+
+// [2,4,8,16]
+#define CONFIG_DIVIDER 8      	
+
+#define TICKRATE (pclk / (CONFIG_PRESCALER + 1) / CONFIG_DIVIDER)
 
 /**
- * Timer input clock Frequency = PCLK / {prescaler value+1} / {divider value}
- * {prescaler value} = 0~255
- * {divider value} = 2, 4, 8, 16
- *
- * @param nms : million seconds to count
+ * timer4 initialization
+ * @param counter: how many ticks triggers an interrupt
+ * @param periodic: 1 --- periodic mode
+ *					0 --- oneshot mode
  */
-static void timer4_init(unsigned int nms)
+static void timer4_init(unsigned int counter, int periodic)
 {
-	unsigned int prescaler;    // [0,255]
-	unsigned int divider;      // [2,4,8,16]
 	unsigned int _divider;
-	unsigned int counter;
 	unsigned int tmp;
-	extern unsigned int pclk;
 
 	peripheral_clock_enable(CLKSRC_PWMTIMER);
 
-	if(pclk != 50000000)
-	{
+	if (pclk != 50000000) {
 		return;
 	}
 
-	switch(nms)
-	{
-	case 0:
-		return;
-
-	case 1:
-		prescaler = 249;
-		divider = 8;
-		counter = 25;
-		break;
-
-	case 5:
-		prescaler = 249;
-		divider = 8;
-		counter = 125;
-		break;
-
-	case 10:
-		prescaler = 249;
-		divider = 8;
-		counter = 250;
-		break;
-
-	case 20:
-		prescaler = 249;
-		divider = 8;
-		counter = 500;
-		break;
-
-	case 50:
-		prescaler = 249;
-		divider = 8;
-		counter = 1250;
-		break;
-
-	case 100:
-		prescaler = 249;
-		divider = 8;
-		counter = 2500;
-		break;
-
-	case 500:
-		prescaler = 249;
-		divider = 8;
-		counter = 12500;
-		break;
-
-	case 1000:
-		prescaler = 99;
-		divider = 16;
-		counter = 31250;
-		break;
-
-	case 5000:
-		prescaler = 249;
-		divider = 16;
-		counter = 62500;
-		break;
-
-	default:
-		return;
-	}
-
-	switch(divider)
-	{
+	switch (CONFIG_DIVIDER) {
 	case 2:
 		_divider = 0;
 		break;
@@ -112,9 +53,14 @@ static void timer4_init(unsigned int nms)
 		return;
 	}
 
+	// interrupt disable
+	tmp = *(volatile unsigned int *)__INTMSK;
+	tmp |= 1 << 14;
+	*(volatile unsigned int *)__INTMSK = tmp;
+
 	tmp = *(volatile unsigned int *)__TCFG0;
     tmp &= ~(0xFF << 8);
-    tmp |= (prescaler & 0xFF) << 8;
+    tmp |= (CONFIG_PRESCALER & 0xFF) << 8;
 	*(volatile unsigned int *)__TCFG0 = tmp;
 
 	tmp = *(volatile unsigned int *)__TCFG1;
@@ -129,21 +75,71 @@ static void timer4_init(unsigned int nms)
 	tmp = *(volatile unsigned int *)__TCON;
     tmp &= ~(7 << 20);
 	tmp |= 1 << 21;
-	tmp |= 1 << 22;
+	if (periodic)
+		tmp |= 1 << 22;
 	*(volatile unsigned int *)__TCON = tmp;
 
     tmp &= ~(1 << 21);
-    tmp |= 1 << 20;
+    tmp |= 1 << 20;		// start timer4
 	*(volatile unsigned int *)__TCON = tmp;
 
+	// interrupt enable
 	tmp = *(volatile unsigned int *)__INTMSK;
 	tmp &= ~(1 << 14);
 	*(volatile unsigned int *)__INTMSK = tmp;
 }
 
+static int samsung_set_next_event(unsigned long cycles,
+				 struct clock_event_device *evt)
+{
+	if (!cycles)
+		cycles = 1;
+
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 'x';
+
+	timer4_init(cycles, 0);
+	return 0;
+}
+
+static int samsung_set_periodic(struct clock_event_device *evt)
+{
+	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+	*(volatile unsigned char *)__UTXH0 = 'y';
+
+	timer4_init(TICKRATE / HZ, 1);
+	return 0;
+}
+
+static int samsung_shutdown(struct clock_event_device *evt)
+{
+	unsigned int tmp;
+
+	// interrupt disable
+	tmp = *(volatile unsigned int *)__INTMSK;
+	tmp |= 1 << 14;
+	*(volatile unsigned int *)__INTMSK = tmp;
+
+    tmp &= ~(1 << 20);		// stop timer4
+	return 0;
+}
+
+static struct clock_event_device time_event_device = {
+	.name				= "samsung_event_timer",
+	.features			= CLOCK_EVT_FEAT_PERIODIC | CLOCK_EVT_FEAT_ONESHOT,
+	.rating				= 200,
+	.set_next_event		= samsung_set_next_event,
+	.set_state_shutdown	= samsung_shutdown,
+	.set_state_periodic	= samsung_set_periodic,
+	.set_state_oneshot	= samsung_shutdown,
+	.tick_resume		= samsung_shutdown,
+	/// .resume				= samsung_clockevent_resume,
+};
+
 static irqreturn_t
 timer_interrupt(int irq, void *dev_id)
 {
+	struct clock_event_device *evt = &time_event_device;
 	///////////////////////////////////////////////
 	static unsigned int n;
 
@@ -157,24 +153,33 @@ timer_interrupt(int irq, void *dev_id)
 		n = 0;
 	///////////////////////////////////////////////
 
-	timer_tick();
+	/// if (pwm.variant.has_tint_cstat) {
+	/// 	u32 mask = (1 << pwm.event_id);
+	/// 	writel(mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
+	/// }
+
+	evt->event_handler(evt);
+
+	////////////////////////////////////////////////
+	/// *(volatile unsigned int *)__SRCPND = 0xFFFFFFFF;
+	/// *(volatile unsigned int *)__INTPND = 0xFFFFFFFF;
+	/// *(volatile unsigned int *)__SUBSRCPND = 0xFFFFFFFF;
+	////////////////////////////////////////////////
 
 	return IRQ_HANDLED;
 }
 
 static struct irqaction timer_irq = {
 	.name		= "timer",
-	.handler	= timer_interrupt
+	.flags		= IRQF_TIMER | IRQF_IRQPOLL,
+	/// .flags		= IRQF_TIMER,
+	.handler	= timer_interrupt,
 };
 
 void __init qin2440_init_timer(void)
 {
 	unsigned int virq = irq_find_mapping(irq_parent.domain, IRQ_TIMER4);
 	unsigned int tmp;		// for debug
-
-	s3c2440_clock_init();
-	setup_irq(virq, &timer_irq);
-	timer4_init(1000 / HZ);
 
 	////////////////////////////////////////////////////////////////
 	// GPF4 set output
@@ -189,4 +194,13 @@ void __init qin2440_init_timer(void)
 	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
 	*(volatile unsigned char *)__UTXH0 = 't';
 	////////////////////////////////////////////////////////////////
+
+	s3c2440_clock_init();
+
+	/// time_event_device.cpumask = cpumask_of(0);
+	clockevents_config_and_register(&time_event_device,
+						TICKRATE, 1, 0xFFFF);
+
+	setup_irq(virq, &timer_irq);
+
 }

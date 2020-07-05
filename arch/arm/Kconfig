@@ -649,6 +649,7 @@ config ARCH_QIN2440
 	select CPU_ARM920T
 	select MULTI_IRQ_HANDLER
 	select IRQ_DOMAIN
+	select GENERIC_CLOCKEVENTS
 	help
 	  A development board base on s3c2440, in fact, it is JZ2440
 

@@ -264,7 +264,14 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
 
         handle_domain_irq(irq_parent.domain, irq_parent.irq_start + offset, regs);
         break;
-	} while (1);
+	} while (0);
+
+
+	////////////////////////////////////////////////
+	*(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
+	*(volatile unsigned int *)__INTPND = *(volatile unsigned int *)__INTPND;
+	*(volatile unsigned int *)__SUBSRCPND = *(volatile unsigned int *)__SUBSRCPND;
+	////////////////////////////////////////////////
 }
 
 static struct irq_chip s3c_irq_level_chip = {
@@ -348,12 +355,4 @@ void __init qin2440_init_irq(void)
      * setup the irq entry
      */
     set_handle_irq(s3c24xx_handle_irq);
-
-	////////////////////////////////////////////////////////////////
-	int m;
-	for (m = 0; m < 10; m++) {
-		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-		*(volatile unsigned char *)__UTXH0 = 'i';
-	}
-	////////////////////////////////////////////////////////////////
 }
