@@ -731,11 +731,6 @@ static int __init qin2440_console_init(void)
 	register_console(&qin2440_console);
 
 	////////////////////////////////////////////////////////////////
-	int i;
-	for (i = 0; i < 100; i++) {
-		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-		*(volatile unsigned char *)__UTXH0 = 'c';
-	}
 	////////////////////////////////////////////////////////////////
 	return 0;
 }
@@ -764,11 +759,6 @@ static int qin2440_probe(struct platform_device *pdev)
 	int i = pdev->id;
 
 	////////////////////////////////////////////////////////////////
-	int k;
-	for (k = 0; k < 100; k++) {
-		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-		*(volatile unsigned char *)__UTXH0 = 's';
-	}
 	////////////////////////////////////////////////////////////////
 
 	qin2440_ports[i].port.dev = &pdev->dev;

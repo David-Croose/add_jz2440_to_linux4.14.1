@@ -17,12 +17,6 @@ static void __init qin2440_init_machine(void)
 	tmp |= (0x1 & 0x3) << (5 * 2);
 	*(volatile unsigned int *)__GPFCON = tmp;
 	*(volatile unsigned int *)__GPFDAT |= 1 << 5;	// off
-
-	int k;
-	for (k = 0; k < 100; k++) {
-		while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-		*(volatile unsigned char *)__UTXH0 = 'a';
-	}
 	////////////////////////////////////////////////////////////////
 
 	qin2440_register_devices();

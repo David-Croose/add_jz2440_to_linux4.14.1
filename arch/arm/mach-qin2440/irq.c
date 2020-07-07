@@ -269,8 +269,8 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
 
 	////////////////////////////////////////////////
 	*(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
-	*(volatile unsigned int *)__INTPND = *(volatile unsigned int *)__INTPND;
-	*(volatile unsigned int *)__SUBSRCPND = *(volatile unsigned int *)__SUBSRCPND;
+	/// *(volatile unsigned int *)__INTPND = *(volatile unsigned int *)__INTPND;
+	/// *(volatile unsigned int *)__SUBSRCPND = *(volatile unsigned int *)__SUBSRCPND;
 	////////////////////////////////////////////////
 }
 
@@ -307,17 +307,17 @@ void __init qin2440_init_irq(void)
      * setup irq domain
      */
     parent_domain = irq_domain_add_legacy(NULL, PARENTIRQ_TOTAL,
-									16,
+									0,
 									IRQ_EINT0,
 									&s3c24xx_irq_ops, NULL);
 
     subeint_domain = irq_domain_add_legacy(NULL, SUBIRQ_EINT_TOTAL,
-									16 + PARENTIRQ_TOTAL,
+									0 + PARENTIRQ_TOTAL,
 									IRQ_EINT4,
 									&s3c24xx_irq_ops, NULL);
 
     submisc_domain = irq_domain_add_legacy(NULL, SUBIRQ_MISC_TOTAL,
-									16 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
+									0 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
 									IRQ_UART0_RXD,
 									&s3c24xx_irq_ops, NULL);
     irq_parent.domain = parent_domain;

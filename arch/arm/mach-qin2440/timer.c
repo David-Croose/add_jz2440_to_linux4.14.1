@@ -176,6 +176,66 @@ static struct irqaction timer_irq = {
 	.handler	= timer_interrupt,
 };
 
+//====================================================================
+/*
+ * watch-dog-timer initialization.
+ * @param pre: prescaler value. range: [0, 256)
+ * @param div: clock division factor. range: 16, 32, 64, 128
+ * @param cnt: timer counter. range: [0, 65536)
+ * @note:
+ *      * the interrupt of wdt is disable after this function.
+ *      * the wdt start counts and will reset the soc in @cnt/(@PCLK/(@pre+1)/@div) seconds
+ *        after this function.
+ *      * an example call: wdt_init(199, 128, 60000) while PCLK=50MHz, then the wdt will reset
+ *        soc in 60000/(50000000/(199+1)/128)=30.72s.
+ */
+void wdt_init(unsigned char pre, unsigned char div, unsigned short cnt)
+{
+    unsigned int tmp;
+
+    /*
+     * disable watch dog tiemr first
+     */
+    *(volatile unsigned int *)__WTCON &= ~(1 << 5);
+
+    /*
+     * set count
+     */
+    *(volatile unsigned int *)__WTCNT = cnt;
+    *(volatile unsigned int *)__WTDAT = 0x8000 | cnt;
+
+    /*
+     * init wdt
+     */
+    tmp = *(volatile unsigned int *)__WTCON;
+
+    // [15:8]: Prescaler value
+    tmp &= ~(0xFF << 8);
+    tmp |= pre << 8;
+
+    // [7:6] must be zero
+    tmp &= ~(3 << 6);
+
+    // [5] Enable or disable bit of Watchdog timer
+    tmp |= 1 << 5;
+
+    // [4:3] Determine the clock division factor
+    tmp &= ~(3 << 3);
+    tmp |= div << 3;
+
+    // [2] Enable or disable bit of the interrupt
+    tmp &= ~(1 << 2);
+
+    // [1] must be zero
+    tmp &= ~(1 << 1);
+
+    // [0] Enable or disable bit of Watchdog timer output for reset signal
+    tmp |= 1;
+
+    *(volatile unsigned int *)__WTCON = tmp;
+}
+//====================================================================
+
 void __init qin2440_init_timer(void)
 {
 	unsigned int virq = irq_find_mapping(irq_parent.domain, IRQ_TIMER4);
@@ -190,9 +250,6 @@ void __init qin2440_init_timer(void)
 	*(volatile unsigned int *)__GPFCON = tmp;
 	/// *(volatile unsigned int *)__GPFDAT &= ~(1 << 4); // up
 	*(volatile unsigned int *)__GPFDAT |= 1 << 4;	// off
-
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 't';
 	////////////////////////////////////////////////////////////////
 
 	s3c2440_clock_init();
@@ -203,4 +260,6 @@ void __init qin2440_init_timer(void)
 
 	setup_irq(virq, &timer_irq);
 
+	// for debug
+	wdt_init(199, 128, 60000);
 }
