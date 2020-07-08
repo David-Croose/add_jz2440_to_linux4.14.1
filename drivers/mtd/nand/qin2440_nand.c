@@ -95,13 +95,13 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 	unsigned int tmp;
 	struct qin2440_mtd_info *qin2440_mtd_info = pdev->dev.platform_data;
 
-	nc = kzalloc(sizeof(struct nand_chip) + sizeof(struct mtd_info), GFP_KERNEL);
+	nc = kzalloc(sizeof(struct nand_chip), GFP_KERNEL);
 	if(!nc) {
 		printk(KERN_ERR "QIN2440 Nand: failed to allocate device structure.\n");
 		ret = -ENOMEM;
 		goto no_res;
 	}
-	mtd = (struct mtd_info *)(nc + 1);
+	mtd = nand_to_mtd(nc);
 
 	/* nand hardware init */
 	{
@@ -124,8 +124,7 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 		__raw_writel(tmp, __NFCONT);
 	}
 
-	mtd->priv = nc;
-	mtd->owner = THIS_MODULE;
+	mtd->dev.parent	= &pdev->dev;
 
 	nc->IO_ADDR_R	= (void __iomem *)__NFDATA;
 	nc->IO_ADDR_W	= (void __iomem *)__NFDATA;
@@ -142,15 +141,19 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 	 */
 	nc->ecc.mode	= NAND_ECC_SOFT;
 	nc->chip_delay	= 50;
+	nc->ecc.algo	= NAND_ECC_HAMMING;
 
 	platform_set_drvdata(pdev, mtd);
 
 	if(nand_scan(mtd, 1)) {
 		ret = -ENXIO;
+		printk("qin2440_nand: %s:%d\n", __FILE__, __LINE__);
 		goto no_dev;
 	}
 
 	if(qin2440_mtd_info->total <= 0 || !qin2440_mtd_info->partition) {
+		printk("qin2440_nand: %s:%d\n", __FILE__, __LINE__);
+		ret = EIO;
 		goto no_dev;
 	}
 
@@ -158,6 +161,7 @@ static int __init qin2440_nand_probe(struct platform_device *pdev)
 
 	if(ret) {
 		nand_release(mtd);
+		printk("qin2440_nand: %s:%d\n", __FILE__, __LINE__);
 		goto no_dev;
 	}
 

@@ -791,9 +791,6 @@ static int __init qin2440_init(void)
 {
 	int rc;
 
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 's';
-
 	peripheral_clock_enable(CLKSRC_UART0);
 	peripheral_clock_enable(CLKSRC_UART1);
 	peripheral_clock_enable(CLKSRC_UART2);
