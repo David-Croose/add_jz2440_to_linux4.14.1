@@ -37,7 +37,7 @@ void s3c2440_clock_init(void)
 	// HCLK = FCLK / 4
 	// PCLK = FCLK / 8
 	__raw_writel(0x05, __CLKDIVN);
-	__asm__
+	__asm__ volatile
 	(
 		"mrc	p15, 0, r1, c1, c0, 0\r\n"
 		"orr	r1, r1, #0xC0000000\r\n"

@@ -150,10 +150,4 @@ static struct map_desc qin2440_iodesc[] __initdata = {
 void __init qin2440_map(void)
 {
 	iotable_init(qin2440_iodesc, ARRAY_SIZE(qin2440_iodesc));
-
-	////////////////////////////////////////////////////////////////
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 'p';
-	////////////////////////////////////////////////////////////////
 }
-

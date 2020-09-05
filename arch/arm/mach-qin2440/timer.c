@@ -95,18 +95,14 @@ static int samsung_set_next_event(unsigned long cycles,
 	if (!cycles)
 		cycles = 1;
 
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 'x';
-
+	printk("======> %s:%d  cycles=%d\n", __FILE__, __LINE__, cycles);
 	timer4_init(cycles, 0);
 	return 0;
 }
 
 static int samsung_set_periodic(struct clock_event_device *evt)
 {
-	while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-	*(volatile unsigned char *)__UTXH0 = 'y';
-
+	printk("======> %s:%d  timer periodic\n", __FILE__, __LINE__);
 	timer4_init(TICKRATE / HZ, 1);
 	return 0;
 }
@@ -115,12 +111,18 @@ static int samsung_shutdown(struct clock_event_device *evt)
 {
 	unsigned int tmp;
 
+	printk("======> %s:%d  timer shutdown\n", __FILE__, __LINE__);
+
 	// interrupt disable
 	tmp = *(volatile unsigned int *)__INTMSK;
 	tmp |= 1 << 14;
 	*(volatile unsigned int *)__INTMSK = tmp;
 
-    tmp &= ~(1 << 20);		// stop timer4
+	tmp = *(volatile unsigned int *)__TCON;
+    tmp &= ~(1 << 21);
+    tmp |= 1 << 20;				// stop timer4
+	*(volatile unsigned int *)__TCON = tmp;
+
 	return 0;
 }
 
@@ -143,13 +145,19 @@ timer_interrupt(int irq, void *dev_id)
 	///////////////////////////////////////////////
 	static unsigned int n;
 
-	if (n < 90000) {
+	if (n < 50) {
 		*(volatile unsigned int *)__GPFDAT |= 1 << 4;	// off
+
+		/// while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+		/// *(volatile unsigned char *)__UTXH0 = '%';
 	} else {
 		*(volatile unsigned int *)__GPFDAT &= ~(1 << 4); // up
+
+		/// while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
+		/// *(volatile unsigned char *)__UTXH0 = '~';
 	}
 
-	if (++n > 100000)
+	if (++n > 100)
 		n = 0;
 	///////////////////////////////////////////////
 
@@ -242,14 +250,30 @@ void __init qin2440_init_timer(void)
 	unsigned int tmp;		// for debug
 
 	////////////////////////////////////////////////////////////////
-	// GPF4 set output
 	peripheral_clock_enable(CLKSRC_GPIO);
+
+	// GPF4 set output
 	tmp = *(volatile unsigned int *)__GPFCON;
 	tmp &= ~((0x3 & 0x3) << (4 * 2));
 	tmp |= (0x1 & 0x3) << (4 * 2);
 	*(volatile unsigned int *)__GPFCON = tmp;
-	/// *(volatile unsigned int *)__GPFDAT &= ~(1 << 4); // up
-	*(volatile unsigned int *)__GPFDAT |= 1 << 4;	// off
+
+	// GPF5 set output
+	tmp = *(volatile unsigned int *)__GPFCON;
+	tmp &= ~((0x3 & 0x3) << (5 * 2));
+	tmp |= (0x1 & 0x3) << (5 * 2);
+	*(volatile unsigned int *)__GPFCON = tmp;
+
+	// GPF6 set output
+	tmp = *(volatile unsigned int *)__GPFCON;
+	tmp &= ~((0x3 & 0x3) << (6 * 2));
+	tmp |= (0x1 & 0x3) << (6 * 2);
+	*(volatile unsigned int *)__GPFCON = tmp;
+
+	// GPF4, GPF5, GPF6 set to be high
+	*(volatile unsigned int *)__GPFDAT |= 1 << 4;
+	*(volatile unsigned int *)__GPFDAT |= 1 << 5;
+	*(volatile unsigned int *)__GPFDAT |= 1 << 6;
 	////////////////////////////////////////////////////////////////
 
 	s3c2440_clock_init();
@@ -261,5 +285,5 @@ void __init qin2440_init_timer(void)
 	setup_irq(virq, &timer_irq);
 
 	// for debug
-	wdt_init(199, 128, 60000);
+	/// wdt_init(199, 128, 60000);
 }
