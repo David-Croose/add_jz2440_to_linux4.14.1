@@ -15,10 +15,10 @@
 #define QIN2440_TOTAL_PORTS    3
 
 #define UART_WRITE_REG(val, reg, tail, port)                      \
-	__raw_write##tail(val, reg##0 - (unsigned int)__ULCON0 + port->mapbase);
+	__raw_write##tail(val, reg##0 - __ULCON0 + port->membase)
 
 #define UART_READ_REG(reg, tail, port)                            \
-	__raw_read##tail(reg##0 - (unsigned int)__ULCON0 + port->mapbase)
+	__raw_read##tail(reg##0 - __ULCON0 + port->membase)
 
 #define S3C2410_UERSTAT_OVERRUN	  (1<<0)
 #define S3C2410_UERSTAT_FRAME	  (1<<2)
@@ -46,8 +46,8 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 		.port = {
 			.line		= 0,
 			.fifosize	= 64,
-			.mapbase	= (unsigned int)__ULCON0,
-			.membase	= __UTXH0,
+			.mapbase	= (unsigned int)ULCON0,
+			.membase	= __ULCON0,
 			.iotype		= UPIO_MEM,
 			/// .irq		= IRQ_UART0_RXD,
 			.uartclk	= 50000000,
@@ -95,7 +95,7 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id);
 static void uart_txirq_enable(struct uart_port *port)
 {
 	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
-
+#if 1
 	/*
 	 * TODO
 	 * Call an irq-handler by a user routine is not a good solution
@@ -118,8 +118,11 @@ static void uart_txirq_enable(struct uart_port *port)
 		// TODO, why uart1 and uart2 don't need the "fist run" limitation? I don't know
 		qin2440_tx_chars(port->irq + 1, port);
 	}
+#endif
 
+	/// printk("-----> %s:%d  before enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
 	if(parent_port->txirq_enable == 0) {
+		/// printk("-----> %s:%d  enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
 		enable_irq(port->irq + 1);
 		parent_port->txirq_enable = 1;
 	}
@@ -214,8 +217,11 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 	struct circ_buf *xmit = &port->state->xmit;
 	int count = 256;
 
+	/// printk("-----> %s:%d  start_tx  port->x_char=%#x\n", __FILE__, __LINE__, port->x_char);
+
 	if(port->x_char) {
-		__raw_writeb(port->x_char, port->membase);
+		/// __raw_writeb(port->x_char, port->membase);
+		UART_WRITE_REG(port->x_char, __UTXH, b, port);
 
 		// this printk can't be delete, or the uart1 and uart2 works bad
 		if(port->line != 0) {
@@ -236,7 +242,8 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 		if(UART_READ_REG(__UFSTAT, l, port) & (1 << 14)) {
 			break;
 		}
-		__raw_writeb(xmit->buf[xmit->tail], port->membase);
+		/// __raw_writeb(xmit->buf[xmit->tail], port->membase);
+		UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH, b, port);
 
 		// this printk can't be delete, or the uart1 and uart2 works bad
 		if(port->line != 0) {
@@ -279,6 +286,8 @@ static unsigned int qin2440_tx_empty(struct uart_port *port)
 
 static void qin2440_start_tx(struct uart_port *port)
 {
+	/// printk("-----> %s:%d  start_tx\n", __FILE__, __LINE__);
+	port->x_char = '^';
 	uart_txirq_enable(port);
 }
 
@@ -330,6 +339,8 @@ static int qin2440_startup(struct uart_port *port)
 		return -1;
 	};
 
+	port->irq = virq;
+
 	ret = request_irq(port->irq, qin2440_rx_chars,
 					  0, "qin2440_uart_rxirq", port);
 	if(ret != 0) {
@@ -344,7 +355,11 @@ static int qin2440_startup(struct uart_port *port)
 		return ret;
 	}
 
-	parent_port->txirq_enable = 1;
+	/// parent_port->txirq_enable = 1;
+	disable_irq(port->irq);
+	disable_irq(port->irq + 1);
+
+	printk("-----> %s:%d  request irq\n", __FILE__, __LINE__);
 
 	return 0;
 }
@@ -577,7 +592,7 @@ static void qin2440_set_termios(struct uart_port *port,
 	uart_misc_init(baud, termios->c_cflag, port);
 
 	// set uart fifo
-	uart_fifo_init(16, port);
+	uart_fifo_init(0, port);
 
 	uart_update_timeout(port, termios->c_cflag, baud);
 
@@ -688,7 +703,8 @@ static void qin2440_console_putc(struct uart_port *port, int c)
 		}
 	}
 
-	__raw_writeb(c, port->membase);
+	/// __raw_writeb(c, port->membase);
+	UART_WRITE_REG(c, __UTXH, b, port);
 }
 
 static void qin2440_console_write(struct console *co, const char *s, unsigned int count)

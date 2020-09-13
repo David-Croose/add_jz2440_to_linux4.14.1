@@ -56,6 +56,7 @@ static struct mtd_partition qin2440_nand_partition[] = {
 	/*
 	 * 100ask mtd layout style
 	 */
+#if 1
 	[0] = {
 		.name	= "bootloader",
 		.offset = 0,
@@ -76,6 +77,28 @@ static struct mtd_partition qin2440_nand_partition[] = {
 		.offset	= 0x260000,
 		.size	= MTDPART_SIZ_FULL,
 	}
+#else
+	[0] = {
+		.name	= "uboot",
+		.offset = 0,
+		.size	= 0x100000,
+	},
+	[1] = {
+		.name	= "env",
+		.offset = 0x100000,
+		.size	= 0x20000,
+	},
+	[2] = {
+		.name 	= "kernel",
+		.offset	= 0x120000,
+		.size	= 0x800000,
+	},
+	[3] = {
+		.name	= "rootfs",
+		.offset	= 0x920000,
+		.size	= MTDPART_SIZ_FULL,
+	}
+#endif
 };
 
 static struct qin2440_mtd_info mtd_info = {

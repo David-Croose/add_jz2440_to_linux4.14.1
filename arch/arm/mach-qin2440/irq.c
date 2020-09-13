@@ -263,12 +263,13 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
             offset =  __ffs(pnd);
 
         handle_domain_irq(irq_parent.domain, irq_parent.irq_start + offset, regs);
-        break;
-	} while (0);
+
+        *(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
+	} while (*(volatile unsigned int *)__SRCPND);
 
 
 	////////////////////////////////////////////////
-	*(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
+	/////*(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
 	/// *(volatile unsigned int *)__INTPND = *(volatile unsigned int *)__INTPND;
 	/// *(volatile unsigned int *)__SUBSRCPND = *(volatile unsigned int *)__SUBSRCPND;
 	////////////////////////////////////////////////
