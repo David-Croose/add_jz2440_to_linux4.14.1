@@ -246,7 +246,6 @@ void wdt_init(unsigned char pre, unsigned char div, unsigned short cnt)
 
 void __init qin2440_init_timer(void)
 {
-	unsigned int virq = irq_find_mapping(irq_parent.domain, IRQ_TIMER4);
 	unsigned int tmp;		// for debug
 
 	////////////////////////////////////////////////////////////////
@@ -282,7 +281,7 @@ void __init qin2440_init_timer(void)
 	clockevents_config_and_register(&time_event_device,
 						TICKRATE, 1, 0xFFFF);
 
-	setup_irq(virq, &timer_irq);
+	setup_irq(VIRQ_TIMER4, &timer_irq);
 
 	// for debug
 	/// wdt_init(199, 128, 60000);

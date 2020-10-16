@@ -12,8 +12,48 @@
 #include <asm/exception.h>
 #include <linux/irqchip/chained_irq.h>
 
-static int get_child(unsigned int hwirq, struct irq_domain **child_dom,
-						unsigned int *child_hwirq);
+#define NOPARENTIRQ		(unsigned int)(-1)
+
+#define IRQITEM(son, parent, dom)   \
+	[(son)] = {                     \
+		.hwirq = (son),             \
+		.parent_hwirq = (parent),   \
+		.more = (dom),              \
+	}
+
+struct dom_priv_data {
+    struct irq_domain *domain;
+    void __iomem *reg_pending;
+    void __iomem *reg_mask;
+    struct dom_priv_data *parent;
+};
+
+struct virq_priv_data {
+	unsigned int hwirq;
+	unsigned int parent_hwirq;
+	struct dom_priv_data *more;
+};
+
+static struct dom_priv_data irq_parent = {
+    .domain = NULL,    /* will be implemented in the latter */
+    .reg_pending = __INTPND,
+    .reg_mask = __INTMSK,
+    .parent = NULL,
+};
+
+static struct dom_priv_data irq_subeint = {
+    .domain = NULL,    /* will be implemented in the latter */
+    .reg_pending = __EINTPEND,
+    .reg_mask = __EINTMASK,
+    .parent = &irq_parent,
+};
+
+static struct dom_priv_data irq_submisc = {
+    .domain = NULL,    /* will be implemented in the latter */
+    .reg_pending = __SUBSRCPND,
+    .reg_mask = __INTSUBMSK,
+    .parent = &irq_parent,
+};
 
 static struct virq_priv_data virq_tbl[] = {
 	IRQITEM(IRQ_WDT_AC97_AC97, IRQ_WDT_AC97, &irq_submisc),
@@ -53,110 +93,58 @@ static struct virq_priv_data virq_tbl[] = {
 	IRQITEM(IRQ_EINT5, IRQ_EINT4_7, &irq_subeint),
 	IRQITEM(IRQ_EINT4, IRQ_EINT4_7, &irq_subeint),
 
-	IRQITEM(IRQ_ADC, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_RTC, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_SPI1, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_UART0, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_IIC, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_USBH, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_USBD, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_NFCON, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_UART1, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_SPI0, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_SDI, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_DMA3, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_DMA2, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_DMA1, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_DMA0, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_LCD, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_UART2, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_TIMER4, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_TIMER3, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_TIMER2, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_TIMER1, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_TIMER0, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_WDT_AC97, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_TICK, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_BATT_FLT, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_INT_CAM, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_EINT8_23, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_EINT4_7, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_EINT3, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_EINT2, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_EINT1, INVALIRQ, &irq_parent),
-	IRQITEM(IRQ_EINT0, INVALIRQ, &irq_parent),
+	IRQITEM(IRQ_ADC, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_RTC, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_SPI1, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_UART0, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_IIC, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_USBH, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_USBD, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_NFCON, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_UART1, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_SPI0, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_SDI, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_DMA3, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_DMA2, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_DMA1, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_DMA0, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_LCD, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_UART2, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_TIMER4, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_TIMER3, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_TIMER2, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_TIMER1, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_TIMER0, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_WDT_AC97, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_TICK, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_BATT_FLT, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_INT_CAM, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_EINT8_23, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_EINT4_7, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_EINT3, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_EINT2, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_EINT1, NOPARENTIRQ, &irq_parent),
+	IRQITEM(IRQ_EINT0, NOPARENTIRQ, &irq_parent),
 };
-
-struct dom_priv_data irq_parent = {
-    .domain = NULL,    /* will be implemented in the latter */
-    .reg_pending = __INTPND,
-    .reg_mask = __INTMSK,
-    .irq_start = IRQ_EINT0,
-    .parent = NULL,
-	.get_child = get_child,
-};
-
-struct dom_priv_data irq_subeint = {
-    .domain = NULL,    /* will be implemented in the latter */
-    .reg_pending = __EINTPEND,
-    .reg_mask = __EINTMASK,
-    .irq_start = IRQ_EINT4,
-    .parent = &irq_parent,
-	.get_child = NULL,
-};
-
-struct dom_priv_data irq_submisc = {
-    .domain = NULL,    /* will be implemented in the latter */
-    .reg_pending = __SUBSRCPND,
-    .reg_mask = __INTSUBMSK,
-    .irq_start = IRQ_UART0_RXD,
-    .parent = &irq_parent,
-	.get_child = NULL,
-};
-
-static int get_child(unsigned int hwirq, struct irq_domain **child_dom,
-						unsigned int *child_hwirq)
-{
-	unsigned int pnd, msk;
-	unsigned int rel;
-
-	if (hwirq == IRQ_EINT4_7 || hwirq == IRQ_EINT8_23) {
-		pnd = __raw_readl(__EINTPEND);
-		if (!pnd)		/* if no sub irqs */
-			return -2;
-
-		msk = __raw_readl(__EINTMASK);
-		pnd &= ~msk;
-		rel = __ffs(pnd);
-		*child_hwirq = rel - 4;
-		*child_dom = irq_subeint.domain;
-		return 0;
-	}
-
-	if (hwirq == IRQ_INT_CAM || hwirq == IRQ_WDT_AC97
-		|| hwirq == IRQ_UART2 || hwirq == IRQ_UART1
-		|| hwirq == IRQ_UART0 || hwirq == IRQ_ADC) {
-		pnd = __raw_readl(__SUBSRCPND);
-		if (!pnd)		/* if no sub irqs */
-			return -3;
-
-		msk = __raw_readl(__INTSUBMSK);
-		pnd &= ~msk;
-		*child_hwirq = __ffs(pnd);
-		*child_dom = irq_submisc.domain;
-		return 0;
-	}
-
-	return -1;
-}
 
 static void s3c_irq_mask(struct irq_data *data)
 {
     struct virq_priv_data *d = irq_data_get_irq_chip_data(data);
     unsigned long mask;
+    unsigned int hwirq_rel;
+
+    if (d->hwirq != IRQ_TIMER4 && d->hwirq != IRQ_UART0 && d->hwirq != IRQ_UART0_TXD)
+    	printk("=====> hwirq %d mask\n", d->hwirq);
+
+    if (d->hwirq < IRQ_EINT4)
+    	hwirq_rel = d->hwirq;
+    else if (d->hwirq < IRQ_UART0_RXD)
+    	hwirq_rel = d->hwirq - IRQ_EINT4 + 4;
+    else
+    	hwirq_rel = d->hwirq - IRQ_UART0_RXD;
 
 	mask = readl_relaxed(d->more->reg_mask);
-	mask |= 1UL << d->hwirq;
+	mask |= 1UL << hwirq_rel;
 	writel_relaxed(mask, d->more->reg_mask);
 
     if (d->more->parent) {
@@ -170,9 +158,20 @@ static void s3c_irq_unmask(struct irq_data *data)
 {
     struct virq_priv_data *d = irq_data_get_irq_chip_data(data);
     unsigned long mask;
+    unsigned int hwirq_rel;
+
+    if (d->hwirq != IRQ_TIMER4 && d->hwirq != IRQ_UART0 && d->hwirq != IRQ_UART0_TXD)
+    	printk("=====> hwirq %d unmask\n", d->hwirq);
+
+    if (d->hwirq < IRQ_EINT4)
+    	hwirq_rel = d->hwirq;
+    else if (d->hwirq < IRQ_UART0_RXD)
+    	hwirq_rel = d->hwirq - IRQ_EINT4 + 4;
+    else
+    	hwirq_rel = d->hwirq - IRQ_UART0_RXD;
 
 	mask = readl_relaxed(d->more->reg_mask);
-	mask &= ~(1UL << d->hwirq);
+	mask &= ~(1UL << hwirq_rel);
 	writel_relaxed(mask, d->more->reg_mask);
 
     if (d->more->parent) {
@@ -185,11 +184,19 @@ static void s3c_irq_unmask(struct irq_data *data)
 static inline void s3c_irq_ack(struct irq_data *data)
 {
     struct virq_priv_data *d = irq_data_get_irq_chip_data(data);
+    unsigned int hwirq_rel;
 
     if (d->more->parent)
     	writel_relaxed(1UL << d->parent_hwirq, d->more->parent->reg_pending);
 
-    writel_relaxed(1UL << d->hwirq, d->more->reg_pending);
+    if (d->hwirq < IRQ_EINT4)
+    	hwirq_rel = d->hwirq;
+    else if (d->hwirq < IRQ_UART0_RXD)
+    	hwirq_rel = d->hwirq - IRQ_EINT4 + 4;
+    else
+    	hwirq_rel = d->hwirq - IRQ_UART0_RXD;
+
+    writel_relaxed(1UL << hwirq_rel, d->more->reg_pending);
 }
 
 static int s3c_irq_type(struct irq_data *data, unsigned int type)
@@ -214,24 +221,52 @@ static int s3c_irq_type(struct irq_data *data, unsigned int type)
 	return 0;
 }
 
+static int get_child(unsigned int hwirq, unsigned int *child_virq)
+{
+	unsigned int pnd, msk;
+	unsigned int rel;
+
+	if (hwirq == IRQ_INT_CAM || hwirq == IRQ_WDT_AC97
+		|| hwirq == IRQ_UART2 || hwirq == IRQ_UART1
+		|| hwirq == IRQ_UART0 || hwirq == IRQ_ADC) {
+		pnd = __raw_readl(__SUBSRCPND);
+		if (!pnd)		/* if no sub irqs */
+			return -ENODATA;
+
+		msk = __raw_readl(__INTSUBMSK);
+		pnd &= ~msk;
+		*child_virq = __ffs(pnd) + VIRQ_UART0_RXD;
+		return 0;
+	}
+
+	if (hwirq == IRQ_EINT4_7 || hwirq == IRQ_EINT8_23) {
+		pnd = __raw_readl(__EINTPEND);
+		if (!pnd)		/* if no sub irqs */
+			return -ENODATA;
+
+		msk = __raw_readl(__EINTMASK);
+		pnd &= ~msk;
+		rel = __ffs(pnd);
+		*child_virq = rel - 4 + VIRQ_EINT4;
+		return 0;
+	}
+
+	return -EINVAL;
+}
+
 static void s3c_irq_demux(struct irq_desc *desc)
 {
 	struct irq_chip *chip = irq_desc_get_chip(desc);
 	struct virq_priv_data *d = irq_desc_get_chip_data(desc);
-	unsigned int virq;
-	struct irq_domain *child_dom;
-	unsigned int child_hwirq;
+	unsigned int child_virq;
 
-    if (!d->more->get_child) {
+    if (d->parent_hwirq != NOPARENTIRQ)
         return;
-	}
 
 	chained_irq_enter(chip, desc);
 
-	while (!d->more->get_child(d->hwirq, &child_dom, &child_hwirq)) {
-		virq = irq_find_mapping(child_dom, d->more->irq_start + child_hwirq);
-		generic_handle_irq(virq);
-	}
+	while (!get_child(d->hwirq, &child_virq))
+		generic_handle_irq(child_virq);
 
 	chained_irq_exit(chip, desc);
 }
@@ -241,38 +276,24 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
     int pnd;
     int offset;
 
-	do {
-        pnd = readl_relaxed(__INTPND);
-        if (!pnd)
-            continue;
+	// while ((offset = readl_relaxed(__INTOFFSET)) != 0) {
+	while ((pnd = readl_relaxed(__INTPND)) != 0) {
+		offset = __ffs(pnd);
 
-        /* We have a problem that the INTOFFSET register does not always
-        * show one interrupt. Occasionally we get two interrupts through
-        * the prioritiser, and this causes the INTOFFSET register to show
-        * what looks like the logical-or of the two interrupt numbers.
-        *
-        * Thanks to Klaus, Shannon, et al for helping to debug this problem
-        */
-        offset = readl_relaxed(__INTOFFSET);
+#if 0
+		if (offset == IRQ_INT_CAM || offset == IRQ_WDT_AC97
+			|| offset == IRQ_UART2 || offset == IRQ_UART1
+            || offset == IRQ_UART0 || offset == IRQ_ADC)
+        	handle_domain_irq(irq_submisc.domain, offset, regs);
+        else if (offset == IRQ_EINT4_7 || offset == IRQ_EINT8_23)
+        	handle_domain_irq(irq_subeint.domain, offset, regs);
+		else
+#endif
+        handle_domain_irq(irq_parent.domain, offset, regs);
 
-        /* Find the bit manually, when the offset is wrong.
-        * The pending register only ever contains the one bit of the next
-        * interrupt to handle.
-        */
-        if (!(pnd & (1 << offset)))
-            offset =  __ffs(pnd);
-
-        handle_domain_irq(irq_parent.domain, irq_parent.irq_start + offset, regs);
-
-        *(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
-	} while (*(volatile unsigned int *)__SRCPND);
-
-
-	////////////////////////////////////////////////
-	/////*(volatile unsigned int *)__SRCPND = *(volatile unsigned int *)__SRCPND;
-	/// *(volatile unsigned int *)__INTPND = *(volatile unsigned int *)__INTPND;
-	/// *(volatile unsigned int *)__SUBSRCPND = *(volatile unsigned int *)__SUBSRCPND;
-	////////////////////////////////////////////////
+        writel_relaxed(1 << offset, __INTPND);
+		writel_relaxed(1 << offset, __SRCPND);
+	}
 }
 
 static struct irq_chip s3c_irq_level_chip = {
@@ -283,7 +304,14 @@ static struct irq_chip s3c_irq_level_chip = {
 	.irq_set_type	= s3c_irq_type,
 };
 
+static int qin2440_irq_map(struct irq_domain *h, unsigned int virq,
+							irq_hw_number_t hw)
+{
+	return 0;
+}
+
 static const struct irq_domain_ops s3c24xx_irq_ops = {
+	.map = qin2440_irq_map,
 	.xlate = irq_domain_xlate_twocell,
 };
 
@@ -293,7 +321,6 @@ void __init qin2440_init_irq(void)
     struct irq_domain *subeint_domain;
     struct irq_domain *submisc_domain;
     unsigned int virq;
-    unsigned int hwirq;
 	int i;
 
 	/* make sure the irq pending bits clear out */
@@ -308,19 +335,32 @@ void __init qin2440_init_irq(void)
      * setup irq domain
      */
     parent_domain = irq_domain_add_legacy(NULL, PARENTIRQ_TOTAL,
+									16,
 									0,
-									IRQ_EINT0,
-									&s3c24xx_irq_ops, NULL);
+									&s3c24xx_irq_ops, "parent_domain");
+    if (!parent_domain) {
+    	printk("failed to add parent_domain\n");
+    	return;
+    }
 
     subeint_domain = irq_domain_add_legacy(NULL, SUBIRQ_EINT_TOTAL,
-									0 + PARENTIRQ_TOTAL,
-									IRQ_EINT4,
-									&s3c24xx_irq_ops, NULL);
+									16 + PARENTIRQ_TOTAL,
+									0,
+									&s3c24xx_irq_ops, "subeint_domain");
+    if (!subeint_domain) {
+    	printk("failed to add subeint_domain\n");
+    	return;
+    }
 
     submisc_domain = irq_domain_add_legacy(NULL, SUBIRQ_MISC_TOTAL,
-									0 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
-									IRQ_UART0_RXD,
-									&s3c24xx_irq_ops, NULL);
+									16 + PARENTIRQ_TOTAL + SUBIRQ_EINT_TOTAL,
+									0,
+									&s3c24xx_irq_ops, "submisc_domain");
+    if (!submisc_domain) {
+    	printk("failed to add submisc_domain\n");
+    	return;
+    }
+
     irq_parent.domain = parent_domain;
     irq_subeint.domain = subeint_domain;
     irq_submisc.domain = submisc_domain;
@@ -328,28 +368,28 @@ void __init qin2440_init_irq(void)
     /*
      * fill the irq chip, handler and chain-handler
      */
-    for (hwirq = IRQ_EINT0; hwirq <= IRQ_ADC; hwirq++) {
-        virq = irq_find_mapping(parent_domain, hwirq);
+    for (virq = VIRQ_EINT0; virq <= VIRQ_ADC; virq++) {
         irq_set_chip_and_handler(virq, &s3c_irq_level_chip, handle_level_irq);
-        irq_set_chip_data(virq, &virq_tbl[hwirq]);
+        irq_set_chip_data(virq, &virq_tbl[VIRQ2HWIRQ(virq)]);
 
         /* setup the chain handler */
-        if (hwirq == IRQ_EINT4_7 || hwirq == IRQ_EINT8_23
-			|| hwirq == IRQ_INT_CAM || hwirq == IRQ_WDT_AC97
-			|| hwirq == IRQ_UART2 || hwirq == IRQ_UART1
-            || hwirq == IRQ_UART0 || hwirq == IRQ_ADC) {
+        if (virq == VIRQ_EINT4_7 || virq == VIRQ_EINT8_23
+			|| virq == VIRQ_INT_CAM || virq == VIRQ_WDT_AC97
+			|| virq == VIRQ_UART2 || virq == VIRQ_UART1
+            || virq == VIRQ_UART0 || virq == VIRQ_ADC)
         	irq_set_chained_handler(virq, s3c_irq_demux);
-        }
     }
-    for (hwirq = IRQ_EINT4; hwirq <= IRQ_EINT23; hwirq++) {
-        virq = irq_find_mapping(subeint_domain, hwirq);
+    for (virq = VIRQ_EINT4; virq <= VIRQ_EINT23; virq++) {
         irq_set_chip_and_handler(virq, &s3c_irq_level_chip, handle_level_irq);
-        irq_set_chip_data(virq, &virq_tbl[hwirq]);
+        irq_set_chip_data(virq, &virq_tbl[VIRQ2HWIRQ(virq)]);
+
+        //printk("~~~~> subeint_domain: virq %d add chip\n", virq);
     }
-    for (hwirq = IRQ_UART0_RXD; hwirq <= IRQ_WDT_AC97_AC97; hwirq++) {
-        virq = irq_find_mapping(submisc_domain, hwirq);
+    for (virq = VIRQ_UART0_RXD; virq <= VIRQ_WDT_AC97_AC97; virq++) {
         irq_set_chip_and_handler(virq, &s3c_irq_level_chip, handle_level_irq);
-        irq_set_chip_data(virq, &virq_tbl[hwirq]);
+        irq_set_chip_data(virq, &virq_tbl[VIRQ2HWIRQ(virq)]);
+
+        //printk("~~~~> submisc_domain: virq %d add chip\n", virq);
     }
 
     /*

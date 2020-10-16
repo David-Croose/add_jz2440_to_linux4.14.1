@@ -146,7 +146,9 @@ static inline int __must_check
 request_irq(unsigned int irq, irq_handler_t handler, unsigned long flags,
 	    const char *name, void *dev)
 {
-	return request_threaded_irq(irq, handler, NULL, flags, name, dev);
+	int ret;
+	ret = request_threaded_irq(irq, handler, NULL, flags, name, dev);
+	return ret;
 }
 
 extern int __must_check

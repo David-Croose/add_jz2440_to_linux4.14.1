@@ -49,7 +49,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 			.mapbase	= (unsigned int)ULCON0,
 			.membase	= __ULCON0,
 			.iotype		= UPIO_MEM,
-			/// .irq		= IRQ_UART0_RXD,
+			.irq		= VIRQ_UART0_RXD,
 			.uartclk	= 50000000,
 			.ops		= &qin2440_uart_ops,
 			.flags		= ASYNC_BOOT_AUTOCONF,
@@ -64,7 +64,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 			.mapbase	= (unsigned int)__ULCON1,
 			.membase	= __UTXH1,
 			.iotype		= UPIO_MEM,
-			/// .irq		= IRQ_UART1_RXD,
+			.irq		= VIRQ_UART1_RXD,
 			.uartclk	= 50000000,
 			.ops		= &qin2440_uart_ops,
 			.flags		= ASYNC_BOOT_AUTOCONF,
@@ -80,7 +80,7 @@ static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS] = {
 			.mapbase	= (unsigned int)__ULCON2,
 			.membase	= __UTXH2,
 			.iotype		= UPIO_MEM,
-			/// .irq		= IRQ_UART2_RXD,
+			.irq		= VIRQ_UART2_RXD,
 			.uartclk	= 50000000,
 			.ops		= &qin2440_uart_ops,
 			.flags		= ASYNC_BOOT_AUTOCONF,
@@ -94,8 +94,8 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id);
 
 static void uart_txirq_enable(struct uart_port *port)
 {
-	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
-#if 1
+	/// struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
+#if 0
 	/*
 	 * TODO
 	 * Call an irq-handler by a user routine is not a good solution
@@ -121,11 +121,11 @@ static void uart_txirq_enable(struct uart_port *port)
 #endif
 
 	/// printk("-----> %s:%d  before enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
-	if(parent_port->txirq_enable == 0) {
-		/// printk("-----> %s:%d  enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
-		enable_irq(port->irq + 1);
-		parent_port->txirq_enable = 1;
-	}
+	/// if(parent_port->txirq_enable == 0) {
+	/// 	/// printk("-----> %s:%d  enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
+	/// 	enable_irq(port->irq + 1);
+	/// 	parent_port->txirq_enable = 1;
+	/// }
 }
 
 static void uart_txirq_disable(struct uart_port *port)
@@ -217,43 +217,55 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 	struct circ_buf *xmit = &port->state->xmit;
 	int count = 256;
 
-	/// printk("-----> %s:%d  start_tx  port->x_char=%#x\n", __FILE__, __LINE__, port->x_char);
+	/// __raw_writel(0x123, 0);
+
+	/// printk("-----> %s:%d  port->x_char=%#x\n",  __FILE__, __LINE__, port->x_char);
 
 	if(port->x_char) {
+		printk("=====> %s:%d\n", __FILE__, __LINE__);
+		__raw_writel(0x123, 0);
+
 		/// __raw_writeb(port->x_char, port->membase);
-		UART_WRITE_REG(port->x_char, __UTXH, b, port);
+		/// UART_WRITE_REG(port->x_char, __UTXH, b, port);
+		__raw_writeb(port->x_char, __UTXH0);
 
 		// this printk can't be delete, or the uart1 and uart2 works bad
-		if(port->line != 0) {
-			printk(KERN_INFO "*");
-		}
+		/// if(port->line != 0) {
+		/// 	printk(KERN_INFO "*");
+		/// }
 
 		port->icount.tx++;
 		port->x_char = 0;
 		goto out;
 	}
 
-	if(uart_circ_empty(xmit) || uart_tx_stopped(port)) {
-		uart_txirq_disable(port);
-		goto out;
-	}
+	/// if(uart_circ_empty(xmit) || uart_tx_stopped(port)) {
+	/// 	printk("=====> %s:%d\n", __FILE__, __LINE__);
+	/// 	__raw_writel(0x123, 0);
+    ///
+	/// 	uart_txirq_disable(port);
+	/// 	goto out;
+	/// }
 
 	while(!uart_circ_empty(xmit) && count-- > 0) {
+		printk("=====> %s:%d\n", __FILE__, __LINE__);
+		__raw_writel(0x123, 0);
+
 		if(UART_READ_REG(__UFSTAT, l, port) & (1 << 14)) {
 			break;
 		}
-		/// __raw_writeb(xmit->buf[xmit->tail], port->membase);
-		UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH, b, port);
+		__raw_writeb(xmit->buf[xmit->tail], __UTXH0);
+		/// UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH, b, port);
 
 		// this printk can't be delete, or the uart1 and uart2 works bad
-		if(port->line != 0) {
-			printk(KERN_INFO "*");
-		}
+		/// if(port->line != 0) {
+		/// 	printk(KERN_INFO "*");
+		/// }
 
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		port->icount.tx++;
 
-		break;  // whatever the fifo equals to what, you always need this line, I don't know
+		/// break;  // whatever the fifo equals to what, you always need this line, I don't know
 	}
 
 	if(uart_circ_chars_pending(xmit) < WAKEUP_CHARS) {
@@ -287,8 +299,8 @@ static unsigned int qin2440_tx_empty(struct uart_port *port)
 static void qin2440_start_tx(struct uart_port *port)
 {
 	/// printk("-----> %s:%d  start_tx\n", __FILE__, __LINE__);
-	port->x_char = '^';
-	uart_txirq_enable(port);
+	/// port->x_char = '^';
+	/// uart_txirq_enable(port);
 }
 
 static void qin2440_stop_tx(struct uart_port *port)
@@ -323,43 +335,55 @@ static int qin2440_startup(struct uart_port *port)
 {
 	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
 	int ret;
+	unsigned int reg;
+
+#if 0
 	unsigned int virq;
 
 	switch (port->line) {
 	case 0:
-		virq = irq_find_mapping(irq_submisc.domain, IRQ_UART0_RXD);
+		virq = IRQ_UART0_RXD + 16;
 		break;
 	case 1:
-		virq = irq_find_mapping(irq_submisc.domain, IRQ_UART1_RXD);
+		virq = IRQ_UART1_RXD + 16;
 		break;
 	case 2:
-		virq = irq_find_mapping(irq_submisc.domain, IRQ_UART2_RXD);
+		virq = IRQ_UART2_RXD + 16;
 		break;
 	default:
 		return -1;
 	};
 
 	port->irq = virq;
+#endif
 
 	ret = request_irq(port->irq, qin2440_rx_chars,
-					  0, "qin2440_uart_rxirq", port);
+					  IRQF_SHARED, "qin2440_uart_rxirq", port);
 	if(ret != 0) {
-		printk(KERN_ERR "qin2440_startup: request rxirq(%d) failed\n", port->line);
+		printk(KERN_ERR "qin2440_uart: port line %d request rxirq %d failed, ret: %d\n", port->line, port->irq, ret);
 		return ret;
 	}
 
 	ret = request_irq(port->irq + 1, qin2440_tx_chars,
-					  0, "qin2440_uart_txirq", port);
+					  IRQF_SHARED, "qin2440_uart_txirq", port);
 	if(ret != 0) {
-		printk(KERN_ERR "qin2440_startup: request txirq(%d) failed\n", port->line);
+		printk(KERN_ERR "qin2440_uart: port line %d request txirq %d failed, ret: %d\n", port->line, port->irq, ret);
 		return ret;
 	}
 
 	/// parent_port->txirq_enable = 1;
-	disable_irq(port->irq);
-	disable_irq(port->irq + 1);
 
-	printk("-----> %s:%d  request irq\n", __FILE__, __LINE__);
+	/// disable_irq(port->irq);
+	/// disable_irq(port->irq + 1);
+
+	/// printk("-----> %s:%d  request irq\n", __FILE__, __LINE__);
+
+
+
+	reg = __raw_readl(__INTMSK);
+	printk("---------> %s: INTMSK=%#08x, INTSUBMSK=%#08x\n", __func__, reg, __raw_readl(__INTSUBMSK));
+
+
 
 	return 0;
 }

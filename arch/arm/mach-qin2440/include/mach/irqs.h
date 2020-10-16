@@ -3,6 +3,9 @@
 
 #include <linux/compiler.h>
 
+//===============================================================================
+// hardware irq
+
 /*
  * sub misc irq
  */
@@ -85,7 +88,7 @@
 #define IRQ_EINT1         1
 #define IRQ_EINT0         0
 
-#define NR_IRQS			  67
+#define NR_IRQS			  (IRQ_WDT_AC97_AC97 - IRQ_EINT0 + 1 + 16)
 
 /*
  * some handy infomation
@@ -94,37 +97,80 @@
 #define SUBIRQ_MISC_TOTAL     (IRQ_WDT_AC97_AC97 - IRQ_UART0_RXD + 1)
 #define SUBIRQ_EINT_TOTAL     (IRQ_EINT23 - IRQ_EINT4 + 1)
 
-/*
- * user's stuff
- */
-#define INVALIRQ		(unsigned int)(-1)
+//===============================================================================
+// virtual irq
 
-#define IRQITEM(son, parent, dom)   \
-	[(son)] = {                     \
-		.hwirq = (son),             \
-		.parent_hwirq = (parent),   \
-		.more = (dom),              \
-	}
+#define HWIRQ2VIRQ(x)		((x) + 16)
+#define VIRQ2HWIRQ(x)		((x) - 16)
 
-struct dom_priv_data {
-    struct irq_domain *domain;
-    void __iomem *reg_pending;
-    void __iomem *reg_mask;
-    unsigned int irq_start;
-    struct dom_priv_data *parent;
-    int (*get_child)(unsigned int hwirq, struct irq_domain **child_dom,
-			unsigned int *child_hwirq);
-};
+#define VIRQ_WDT_AC97_AC97 HWIRQ2VIRQ(IRQ_WDT_AC97_AC97)
+#define VIRQ_WDT_AC97_WDT  HWIRQ2VIRQ(IRQ_WDT_AC97_WDT)
+#define VIRQ_CAM_P         HWIRQ2VIRQ(IRQ_CAM_P)
+#define VIRQ_CAM_C         HWIRQ2VIRQ(IRQ_CAM_C)
+#define VIRQ_ADC_S         HWIRQ2VIRQ(IRQ_ADC_S)
+#define VIRQ_ADC_TC        HWIRQ2VIRQ(IRQ_ADC_TC)
+#define VIRQ_UART2_ERR     HWIRQ2VIRQ(IRQ_UART2_ERR)
+#define VIRQ_UART2_TXD     HWIRQ2VIRQ(IRQ_UART2_TXD)
+#define VIRQ_UART2_RXD     HWIRQ2VIRQ(IRQ_UART2_RXD)
+#define VIRQ_UART1_ERR     HWIRQ2VIRQ(IRQ_UART1_ERR)
+#define VIRQ_UART1_TXD     HWIRQ2VIRQ(IRQ_UART1_TXD)
+#define VIRQ_UART1_RXD     HWIRQ2VIRQ(IRQ_UART1_RXD)
+#define VIRQ_UART0_ERR     HWIRQ2VIRQ(IRQ_UART0_ERR)
+#define VIRQ_UART0_TXD     HWIRQ2VIRQ(IRQ_UART0_TXD)
+#define VIRQ_UART0_RXD     HWIRQ2VIRQ(IRQ_UART0_RXD)
 
-struct virq_priv_data {
-	unsigned int hwirq;
-	unsigned int parent_hwirq;
-	struct dom_priv_data *more;
-};
+#define VIRQ_EINT23        HWIRQ2VIRQ(IRQ_EINT23)
+#define VIRQ_EINT22        HWIRQ2VIRQ(IRQ_EINT22)
+#define VIRQ_EINT21        HWIRQ2VIRQ(IRQ_EINT21)
+#define VIRQ_EINT20        HWIRQ2VIRQ(IRQ_EINT20)
+#define VIRQ_EINT19        HWIRQ2VIRQ(IRQ_EINT19)
+#define VIRQ_EINT18        HWIRQ2VIRQ(IRQ_EINT18)
+#define VIRQ_EINT17        HWIRQ2VIRQ(IRQ_EINT17)
+#define VIRQ_EINT16        HWIRQ2VIRQ(IRQ_EINT16)
+#define VIRQ_EINT15        HWIRQ2VIRQ(IRQ_EINT15)
+#define VIRQ_EINT14        HWIRQ2VIRQ(IRQ_EINT14)
+#define VIRQ_EINT13        HWIRQ2VIRQ(IRQ_EINT13)
+#define VIRQ_EINT12        HWIRQ2VIRQ(IRQ_EINT12)
+#define VIRQ_EINT11        HWIRQ2VIRQ(IRQ_EINT11)
+#define VIRQ_EINT10        HWIRQ2VIRQ(IRQ_EINT10)
+#define VIRQ_EINT9         HWIRQ2VIRQ(IRQ_EINT9)
+#define VIRQ_EINT8         HWIRQ2VIRQ(IRQ_EINT8)
+#define VIRQ_EINT7         HWIRQ2VIRQ(IRQ_EINT7)
+#define VIRQ_EINT6         HWIRQ2VIRQ(IRQ_EINT6)
+#define VIRQ_EINT5         HWIRQ2VIRQ(IRQ_EINT5)
+#define VIRQ_EINT4         HWIRQ2VIRQ(IRQ_EINT4)
 
-extern struct dom_priv_data irq_parent;
-extern struct dom_priv_data irq_subeint;
-extern struct dom_priv_data irq_submisc;
+#define VIRQ_ADC           HWIRQ2VIRQ(IRQ_ADC)        /* can't be requested */
+#define VIRQ_RTC           HWIRQ2VIRQ(IRQ_RTC)
+#define VIRQ_SPI1          HWIRQ2VIRQ(IRQ_SPI1)
+#define VIRQ_UART0         HWIRQ2VIRQ(IRQ_UART0)      /* can't be requested */
+#define VIRQ_IIC           HWIRQ2VIRQ(IRQ_IIC)
+#define VIRQ_USBH          HWIRQ2VIRQ(IRQ_USBH)
+#define VIRQ_USBD          HWIRQ2VIRQ(IRQ_USBD)
+#define VIRQ_NFCON         HWIRQ2VIRQ(IRQ_NFCON)
+#define VIRQ_UART1         HWIRQ2VIRQ(IRQ_UART1)      /* can't be requested */
+#define VIRQ_SPI0          HWIRQ2VIRQ(IRQ_SPI0)
+#define VIRQ_SDI           HWIRQ2VIRQ(IRQ_SDI)
+#define VIRQ_DMA3          HWIRQ2VIRQ(IRQ_DMA3)
+#define VIRQ_DMA2          HWIRQ2VIRQ(IRQ_DMA2)
+#define VIRQ_DMA1          HWIRQ2VIRQ(IRQ_DMA1)
+#define VIRQ_DMA0          HWIRQ2VIRQ(IRQ_DMA0)
+#define VIRQ_LCD           HWIRQ2VIRQ(IRQ_LCD)
+#define VIRQ_UART2         HWIRQ2VIRQ(IRQ_UART2)      /* can't be requested */
+#define VIRQ_TIMER4        HWIRQ2VIRQ(IRQ_TIMER4)
+#define VIRQ_TIMER3        HWIRQ2VIRQ(IRQ_TIMER3)
+#define VIRQ_TIMER2        HWIRQ2VIRQ(IRQ_TIMER2)
+#define VIRQ_TIMER1        HWIRQ2VIRQ(IRQ_TIMER1)
+#define VIRQ_TIMER0        HWIRQ2VIRQ(IRQ_TIMER0)
+#define VIRQ_WDT_AC97      HWIRQ2VIRQ(IRQ_WDT_AC97)   /* can't be requested */
+#define VIRQ_TICK          HWIRQ2VIRQ(IRQ_TICK)
+#define VIRQ_BATT_FLT      HWIRQ2VIRQ(IRQ_BATT_FLT)
+#define VIRQ_INT_CAM       HWIRQ2VIRQ(IRQ_INT_CAM)    /* can't be requested */
+#define VIRQ_EINT8_23      HWIRQ2VIRQ(IRQ_EINT8_23)   /* can't be requested */
+#define VIRQ_EINT4_7       HWIRQ2VIRQ(IRQ_EINT4_7)    /* can't be requested */
+#define VIRQ_EINT3         HWIRQ2VIRQ(IRQ_EINT3)
+#define VIRQ_EINT2         HWIRQ2VIRQ(IRQ_EINT2)
+#define VIRQ_EINT1         HWIRQ2VIRQ(IRQ_EINT1)
+#define VIRQ_EINT0         HWIRQ2VIRQ(IRQ_EINT0)
 
 #endif
-
