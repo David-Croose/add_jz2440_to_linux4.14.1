@@ -147,11 +147,11 @@ static void s3c_irq_mask(struct irq_data *data)
 	mask |= 1UL << hwirq_rel;
 	writel_relaxed(mask, d->more->reg_mask);
 
-    if (d->more->parent) {
-        mask = readl_relaxed(d->more->parent->reg_mask);
-        mask |= 1UL << d->parent_hwirq;
-        writel_relaxed(mask, d->more->parent->reg_mask);
-    }
+    /// if (d->more->parent) {
+    ///     mask = readl_relaxed(d->more->parent->reg_mask);
+    ///     mask |= 1UL << d->parent_hwirq;
+    ///     writel_relaxed(mask, d->more->parent->reg_mask);
+    /// }
 }
 
 static void s3c_irq_unmask(struct irq_data *data)
@@ -174,11 +174,11 @@ static void s3c_irq_unmask(struct irq_data *data)
 	mask &= ~(1UL << hwirq_rel);
 	writel_relaxed(mask, d->more->reg_mask);
 
-    if (d->more->parent) {
-        mask = readl_relaxed(d->more->parent->reg_mask);
-        mask &= ~(1UL << d->parent_hwirq);
-        writel_relaxed(mask, d->more->parent->reg_mask);
-    }
+    /// if (d->more->parent) {
+    ///     mask = readl_relaxed(d->more->parent->reg_mask);
+    ///     mask &= ~(1UL << d->parent_hwirq);
+    ///     writel_relaxed(mask, d->more->parent->reg_mask);
+    /// }
 }
 
 static inline void s3c_irq_ack(struct irq_data *data)
@@ -186,8 +186,8 @@ static inline void s3c_irq_ack(struct irq_data *data)
     struct virq_priv_data *d = irq_data_get_irq_chip_data(data);
     unsigned int hwirq_rel;
 
-    if (d->more->parent)
-    	writel_relaxed(1UL << d->parent_hwirq, d->more->parent->reg_pending);
+    /// if (d->more->parent)
+    ///	writel_relaxed(1UL << d->parent_hwirq, d->more->parent->reg_pending);
 
     if (d->hwirq < IRQ_EINT4)
     	hwirq_rel = d->hwirq;
