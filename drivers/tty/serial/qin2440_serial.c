@@ -94,7 +94,7 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id);
 
 static void uart_txirq_enable(struct uart_port *port)
 {
-	/// struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
+	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
 #if 0
 	/*
 	 * TODO
@@ -121,11 +121,11 @@ static void uart_txirq_enable(struct uart_port *port)
 #endif
 
 	/// printk("-----> %s:%d  before enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
-	/// if(parent_port->txirq_enable == 0) {
-	/// 	/// printk("-----> %s:%d  enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
-	/// 	enable_irq(port->irq + 1);
-	/// 	parent_port->txirq_enable = 1;
-	/// }
+	if(parent_port->txirq_enable == 0) {
+		/// printk("-----> %s:%d  enable irq %d\n", __FILE__, __LINE__, port->irq + 1);
+		/// enable_irq(port->irq + 1);
+		parent_port->txirq_enable = 1;
+	}
 }
 
 static void uart_txirq_disable(struct uart_port *port)
@@ -133,14 +133,14 @@ static void uart_txirq_disable(struct uart_port *port)
  	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
 
 	if(parent_port->txirq_enable == 1) {
-		disable_irq(port->irq + 1);
+		/// disable_irq(port->irq + 1);
 		parent_port->txirq_enable = 0;
 	}
 }
 
 static void uart_rxirq_disable(struct uart_port *port)
 {
-	disable_irq(port->irq);
+	/// disable_irq(port->irq);
 }
 
 static irqreturn_t qin2440_rx_chars(int irq, void *dev_id)
@@ -217,13 +217,31 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 	struct circ_buf *xmit = &port->state->xmit;
 	int count = 256;
 
+#if 0
+	int i;
+
+	if (__raw_readl(__INTPND) << (1 << 28))
+		printk("====> %s:%d uart tx irq\n", __FILE__, __LINE__);
+	if (__raw_readl(__SRCPND) << (1 << 28))
+		printk("====> %s:%d uart tx irq\n", __FILE__, __LINE__);
+	if (__raw_readl(__SUBSRCPND) << (1 << 0))
+		printk("====> %s:%d uart tx irq  SUBSRCPND=%#x\n", __FILE__, __LINE__, __raw_readl(__SUBSRCPND));
+
+	for (i = 0; i < 3; i++) {
+		__raw_writel(__raw_readl(__SUBSRCPND), __SUBSRCPND);
+		__raw_writel(__raw_readl(__SRCPND),    __SRCPND);
+		__raw_writel(__raw_readl(__INTPND),    __INTPND);
+		__raw_writel(__raw_readl(__EINTPEND),  __EINTPEND);
+	}
+#endif
+
 	/// __raw_writel(0x123, 0);
 
 	/// printk("-----> %s:%d  port->x_char=%#x\n",  __FILE__, __LINE__, port->x_char);
 
 	if(port->x_char) {
-		printk("=====> %s:%d\n", __FILE__, __LINE__);
-		__raw_writel(0x123, 0);
+		/// printk("=====> %s:%d\n", __FILE__, __LINE__);
+		/// __raw_writel(0x123, 0);
 
 		/// __raw_writeb(port->x_char, port->membase);
 		/// UART_WRITE_REG(port->x_char, __UTXH, b, port);
@@ -239,17 +257,17 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 		goto out;
 	}
 
-	/// if(uart_circ_empty(xmit) || uart_tx_stopped(port)) {
-	/// 	printk("=====> %s:%d\n", __FILE__, __LINE__);
-	/// 	__raw_writel(0x123, 0);
-    ///
-	/// 	uart_txirq_disable(port);
-	/// 	goto out;
-	/// }
+	if(uart_circ_empty(xmit) || uart_tx_stopped(port)) {
+		///printk("=====> %s:%d\n", __FILE__, __LINE__);
+		///__raw_writel(0x123, 0);
+
+		uart_txirq_disable(port);
+		goto out;
+	}
 
 	while(!uart_circ_empty(xmit) && count-- > 0) {
-		printk("=====> %s:%d\n", __FILE__, __LINE__);
-		__raw_writel(0x123, 0);
+		/// printk("=====> %s:%d\n", __FILE__, __LINE__);
+		/// __raw_writel(0x123, 0);
 
 		if(UART_READ_REG(__UFSTAT, l, port) & (1 << 14)) {
 			break;
@@ -300,7 +318,7 @@ static void qin2440_start_tx(struct uart_port *port)
 {
 	/// printk("-----> %s:%d  start_tx\n", __FILE__, __LINE__);
 	/// port->x_char = '^';
-	/// uart_txirq_enable(port);
+	uart_txirq_enable(port);
 }
 
 static void qin2440_stop_tx(struct uart_port *port)
@@ -331,6 +349,27 @@ static void qin2440_break_ctl(struct uart_port *port, int break_state)
 	spin_unlock_irqrestore(&port->lock, flags);
 }
 
+static struct timer_list uart_tx_timer;
+static struct timer_list uart_rx_timer;
+
+static void uart_tx_handler(unsigned long data)
+{
+	qin2440_tx_chars(IRQ_UART0_TXD, &qin2440_ports[0].port);
+
+	/// printk("=====> uart_tx_handler\n");
+
+	mod_timer(&uart_tx_timer, jiffies + msecs_to_jiffies(20));
+}
+
+static void uart_rx_handler(unsigned long data)
+{
+	qin2440_rx_chars(IRQ_UART0_RXD, &qin2440_ports[0].port);
+
+	/// printk("=====> uart_rx_handler\n");
+
+	mod_timer(&uart_rx_timer, jiffies + msecs_to_jiffies(20));
+}
+
 static int qin2440_startup(struct uart_port *port)
 {
 	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
@@ -338,25 +377,6 @@ static int qin2440_startup(struct uart_port *port)
 	unsigned int reg;
 
 #if 0
-	unsigned int virq;
-
-	switch (port->line) {
-	case 0:
-		virq = IRQ_UART0_RXD + 16;
-		break;
-	case 1:
-		virq = IRQ_UART1_RXD + 16;
-		break;
-	case 2:
-		virq = IRQ_UART2_RXD + 16;
-		break;
-	default:
-		return -1;
-	};
-
-	port->irq = virq;
-#endif
-
 	ret = request_irq(port->irq, qin2440_rx_chars,
 					  IRQF_SHARED, "qin2440_uart_rxirq", port);
 	if(ret != 0) {
@@ -371,12 +391,18 @@ static int qin2440_startup(struct uart_port *port)
 		return ret;
 	}
 
-	/// parent_port->txirq_enable = 1;
+	parent_port->txirq_enable = 1;
 
-	/// disable_irq(port->irq);
-	/// disable_irq(port->irq + 1);
+#else
 
-	/// printk("-----> %s:%d  request irq\n", __FILE__, __LINE__);
+	setup_timer(&uart_rx_timer, uart_rx_handler, 0);
+	uart_rx_timer.expires = jiffies + msecs_to_jiffies(500);
+	add_timer(&uart_rx_timer);
+
+	setup_timer(&uart_tx_timer, uart_tx_handler, 0);
+	uart_tx_timer.expires = jiffies + msecs_to_jiffies(500);
+	add_timer(&uart_tx_timer);
+#endif
 
 
 
@@ -531,17 +557,19 @@ static void uart_misc_init(unsigned int baud, unsigned int c_cflag,
 
 	UART_WRITE_REG(ulcon, __ULCON, l, port);
 
+#if 0
 	ucon = 0;
 	ucon |= (1 & 0x3) << 0;    // Rx Interrupt request or polling mode
 	ucon |= (1 & 0x3) << 2;    // Tx Interrupt request or polling mode
 	ucon |= (0 & 0x1) << 4;    // Don't send break signal while transmitting
 	ucon |= (0 & 0x1) << 5;    // Don't use loopback mode
-	ucon |= (1 & 0x1) << 6;    // Generate receive error status interrupt
+	/// ucon |= (1 & 0x1) << 6;    // Generate receive error status interrupt
 	ucon |= (1 & 0x1) << 7;    // Disable Rx time out interrupt when UART FIFO is enabled. The interrupt is a receive interrupt
 	ucon |= (0 & 0x1) << 8;    // Interrupt is requested the instant Rx buffer receivesthe data in Non-FIFO mode or reaches Rx FIFO Trigger Level inFIFO mode
 	ucon |= (0 & 0x1) << 9;    // Interrupt is requested as soon as the Tx bufferbecomes empty in Non-FIFO mode or reaches Tx FIFO TriggerLevel in FIFO mode
 	ucon |= (0 & 0x3) << 10;   // Select PCLK as the source clock of UART0
 	UART_WRITE_REG(ucon, __UCON, l, port);
+#endif
 
 	// UBRDIVn = (int)( UART clock / ( buad rate x 16) ) ¨C1
 	ubrdiv = (port->uartclk * 10 / baud / 16 % 10) >= 5

@@ -186,6 +186,12 @@ static inline void s3c_irq_ack(struct irq_data *data)
     struct virq_priv_data *d = irq_data_get_irq_chip_data(data);
     unsigned int hwirq_rel;
 
+    ///if (d->hwirq != IRQ_TIMER4)
+    	///printk("=====> hwirq %d ack\n", d->hwirq);
+
+    if (d->hwirq >= IRQ_UART0_RXD)
+    	__raw_writel(__raw_readl(__SUBSRCPND), __SUBSRCPND);
+
     /// if (d->more->parent)
     ///	writel_relaxed(1UL << d->parent_hwirq, d->more->parent->reg_pending);
 
@@ -265,7 +271,7 @@ static void s3c_irq_demux(struct irq_desc *desc)
 
 	chained_irq_enter(chip, desc);
 
-	while (!get_child(d->hwirq, &child_virq))
+	if (!get_child(d->hwirq, &child_virq))
 		generic_handle_irq(child_virq);
 
 	chained_irq_exit(chip, desc);
@@ -277,7 +283,7 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
     int offset;
 
 	// while ((offset = readl_relaxed(__INTOFFSET)) != 0) {
-	while ((pnd = readl_relaxed(__INTPND)) != 0) {
+	if ((pnd = readl_relaxed(__INTPND)) != 0) {
 		offset = __ffs(pnd);
 
 #if 0
