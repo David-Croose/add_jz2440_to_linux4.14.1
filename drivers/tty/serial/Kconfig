@@ -1712,6 +1712,12 @@ config SERIAL_QIN2440
 	select SERIAL_CORE
 	help
 	  Enable QIN2440 on-chip-serial port
+	  
+config SERIAL_QIN2440_POLL
+	bool "QIN2440 serial poll support"
+	select SERIAL_CORE
+	help
+	  Enable QIN2440 on-chip-serial port, using timer poll for irq picture
 
 config SERIAL_QIN2440_CONSOLE
 	bool "QIN2440 serial colsole port"

@@ -42,27 +42,14 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id);
 
 static void uart_txirq_enable(struct uart_port *port)
 {
-	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
-
-	if(parent_port->txirq_enable == 0) {
-		enable_irq(VIRQ_UART0);
-		parent_port->txirq_enable = 1;
-	}
 }
 
 static void uart_txirq_disable(struct uart_port *port)
 {
- 	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
-
-	if(parent_port->txirq_enable == 1) {
-		disable_irq(VIRQ_UART0);
-		parent_port->txirq_enable = 0;
-	}
 }
 
 static void uart_rxirq_disable(struct uart_port *port)
 {
-	disable_irq(port->irq);
 }
 
 static irqreturn_t qin2440_rx_chars(int irq, void *dev_id)
@@ -226,35 +213,40 @@ static void qin2440_break_ctl(struct uart_port *port, int break_state)
 	spin_unlock_irqrestore(&port->lock, flags);
 }
 
+static struct timer_list uart_tx_timer;
+static struct timer_list uart_rx_timer;
+
+static void uart_tx_handler(unsigned long data)
+{
+	qin2440_tx_chars(-1, &qin2440_ports[data].port);
+
+	mod_timer(&uart_tx_timer, jiffies + msecs_to_jiffies(20));
+}
+
+static void uart_rx_handler(unsigned long data)
+{
+	qin2440_rx_chars(-1, &qin2440_ports[data].port);
+
+	mod_timer(&uart_rx_timer, jiffies + msecs_to_jiffies(20));
+}
+
 static int qin2440_startup(struct uart_port *port)
 {
-	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
-	int ret;
-	unsigned int reg;
+	setup_timer(&uart_rx_timer, uart_rx_handler, 0);
+	uart_rx_timer.expires = jiffies + msecs_to_jiffies(500);
+	uart_rx_timer.data = port->line;
+	add_timer(&uart_rx_timer);
 
-	ret = request_irq(port->irq, qin2440_rx_chars,
-					  0, "qin2440_uart_rxirq", port);
-	if(ret != 0) {
-		printk(KERN_ERR "qin2440_startup: request rxirq(%d) failed\n", port->line);
-		return ret;
-	}
-
-	ret = request_irq(port->irq + 1, qin2440_tx_chars,
-					  0, "qin2440_uart_txirq", port);
-	if(ret != 0) {
-		printk(KERN_ERR "qin2440_startup: request txirq(%d) failed\n", port->line);
-		return ret;
-	}
-
-	parent_port->txirq_enable = 1;
+	setup_timer(&uart_tx_timer, uart_tx_handler, 0);
+	uart_tx_timer.expires = jiffies + msecs_to_jiffies(500);
+	uart_tx_timer.data = port->line;
+	add_timer(&uart_tx_timer);
 
 	return 0;
 }
 
 static void qin2440_shutdown(struct uart_port *port)
 {
-	free_irq(port->irq, port);
-	free_irq(port->irq + 1, port);
 }
 
 /**
@@ -717,7 +709,7 @@ console_initcall(qin2440_console_init);
 static struct uart_driver qin2440_driver = {
 	.owner			= THIS_MODULE,
 	.driver_name	= "ttySAC",
-	.dev_name		= "qin2440_uart",  // this name will lay in "/dev"
+	.dev_name		= "qin2440_uart_poll",  // this name will lay in "/dev"
 	.major			= 204,
 	.minor			= 64,
 	.nr				= QIN2440_TOTAL_PORTS,
