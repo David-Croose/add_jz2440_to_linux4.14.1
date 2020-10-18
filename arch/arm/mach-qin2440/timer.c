@@ -95,14 +95,12 @@ static int samsung_set_next_event(unsigned long cycles,
 	if (!cycles)
 		cycles = 1;
 
-	printk("======> %s:%d  cycles=%d\n", __FILE__, __LINE__, cycles);
 	timer4_init(cycles, 0);
 	return 0;
 }
 
 static int samsung_set_periodic(struct clock_event_device *evt)
 {
-	printk("======> %s:%d  timer periodic\n", __FILE__, __LINE__);
 	timer4_init(TICKRATE / HZ, 1);
 	return 0;
 }
@@ -110,8 +108,6 @@ static int samsung_set_periodic(struct clock_event_device *evt)
 static int samsung_shutdown(struct clock_event_device *evt)
 {
 	unsigned int tmp;
-
-	printk("======> %s:%d  timer shutdown\n", __FILE__, __LINE__);
 
 	// interrupt disable
 	tmp = *(volatile unsigned int *)__INTMSK;
@@ -135,44 +131,26 @@ static struct clock_event_device time_event_device = {
 	.set_state_periodic	= samsung_set_periodic,
 	.set_state_oneshot	= samsung_shutdown,
 	.tick_resume		= samsung_shutdown,
-	/// .resume				= samsung_clockevent_resume,
 };
 
 static irqreturn_t
 timer_interrupt(int irq, void *dev_id)
 {
 	struct clock_event_device *evt = &time_event_device;
+
 	///////////////////////////////////////////////
 	static unsigned int n;
 
-	if (n < 50) {
+	if (n < 50)
 		*(volatile unsigned int *)__GPFDAT |= 1 << 4;	// off
-
-		/// while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-		/// *(volatile unsigned char *)__UTXH0 = '%';
-	} else {
+	else
 		*(volatile unsigned int *)__GPFDAT &= ~(1 << 4); // up
-
-		/// while(!((*(volatile unsigned int *)__UTRSTAT0) & (1 << 2)));
-		/// *(volatile unsigned char *)__UTXH0 = '~';
-	}
 
 	if (++n > 100)
 		n = 0;
 	///////////////////////////////////////////////
 
-	/// if (pwm.variant.has_tint_cstat) {
-	/// 	u32 mask = (1 << pwm.event_id);
-	/// 	writel(mask | (mask << 5), pwm.base + REG_TINT_CSTAT);
-	/// }
-
 	evt->event_handler(evt);
-
-	////////////////////////////////////////////////
-	/// *(volatile unsigned int *)__SRCPND = 0xFFFFFFFF;
-	/// *(volatile unsigned int *)__INTPND = 0xFFFFFFFF;
-	/// *(volatile unsigned int *)__SUBSRCPND = 0xFFFFFFFF;
-	////////////////////////////////////////////////
 
 	return IRQ_HANDLED;
 }
@@ -180,7 +158,6 @@ timer_interrupt(int irq, void *dev_id)
 static struct irqaction timer_irq = {
 	.name		= "timer",
 	.flags		= IRQF_TIMER | IRQF_IRQPOLL,
-	/// .flags		= IRQF_TIMER,
 	.handler	= timer_interrupt,
 };
 
