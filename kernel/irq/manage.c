@@ -1138,10 +1138,8 @@ __setup_irq(unsigned int irq, struct irq_desc *desc, struct irqaction *new)
 	if (!desc)
 		return -EINVAL;
 
-	if (desc->irq_data.chip == &no_irq_chip) {
-		printk("---------------> %s:%d\n", __FILE__, __LINE__);
+	if (desc->irq_data.chip == &no_irq_chip)
 		return -ENOSYS;
-	}
 	if (!try_module_get(desc->owner))
 		return -ENODEV;
 
@@ -1766,12 +1764,10 @@ int request_threaded_irq(unsigned int irq, irq_handler_t handler,
 	retval = irq_chip_pm_get(&desc->irq_data);
 	if (retval < 0) {
 		kfree(action);
-		printk("---------------> %s:%d  retval=%d\n", __FILE__, __LINE__, retval);
 		return retval;
 	}
 
 	retval = __setup_irq(irq, desc, action);
-	printk("---------------> %s:%d  retval=%d\n", __FILE__, __LINE__, retval);
 
 	if (retval) {
 		irq_chip_pm_put(&desc->irq_data);
@@ -1798,8 +1794,6 @@ int request_threaded_irq(unsigned int irq, irq_handler_t handler,
 		enable_irq(irq);
 	}
 #endif
-
-	printk("---------------> %s:%d  retval=%d\n", __FILE__, __LINE__, retval);
 	return retval;
 }
 EXPORT_SYMBOL(request_threaded_irq);
