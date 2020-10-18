@@ -38,7 +38,7 @@ struct qin2440_uart {
 	char				txirq_enable;
 };
 
-static irqreturn_t qin2440_tx_chars(int irq, void *dev_id);
+static struct qin2440_uart qin2440_ports[QIN2440_TOTAL_PORTS];
 
 static void uart_txirq_enable(struct uart_port *port)
 {
@@ -127,7 +127,7 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 	int count = 256;
 
 	if(port->x_char) {
-		UART_WRITE_REG(port->x_char, __UTXH0, b, port);
+		UART_WRITE_REG(port->x_char, __UTXH, b, port);
 		port->icount.tx++;
 		port->x_char = 0;
 		goto out;
@@ -142,7 +142,7 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 		if(UART_READ_REG(__UFSTAT, l, port) & (1 << 14)) {
 			break;
 		}
-		UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH0, b, port);
+		UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH, b, port);
 
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		port->icount.tx++;

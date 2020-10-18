@@ -41,7 +41,7 @@ static void s3c_irq_mask(struct irq_data *data)
 
 	mask = __raw_readl(d->reg_mask);
 	mask |= 1UL << data->hwirq;
-	__raw__writel(mask, d->reg_mask);
+	__raw_writel(mask, d->reg_mask);
 }
 
 static void s3c_irq_unmask(struct irq_data *data)
@@ -51,7 +51,7 @@ static void s3c_irq_unmask(struct irq_data *data)
 
 	mask = __raw_readl(d->reg_mask);
 	mask &= ~(1UL << data->hwirq);
-	__raw__writel(mask, d->reg_mask);
+	__raw_writel(mask, d->reg_mask);
 }
 
 static inline void s3c_irq_ack(struct irq_data *data)
@@ -61,7 +61,7 @@ static inline void s3c_irq_ack(struct irq_data *data)
 
     pnd = __raw_readl(d->reg_pending);
     pnd |= 1UL << data->hwirq;		/* TODO  is the hwirq right? */
-    __raw__writel(pnd, d->reg_pending);
+    __raw_writel(pnd, d->reg_pending);
 }
 
 static int s3c_irq_type(struct irq_data *data, unsigned int type)
@@ -146,8 +146,8 @@ asmlinkage void __exception_irq_entry s3c24xx_handle_irq(struct pt_regs *regs)
 
         handle_domain_irq(parent_domain, offset, regs);
 
-        __raw__writel(1 << offset, __INTPND);
-		__raw__writel(1 << offset, __SRCPND);
+        __raw_writel(1 << offset, __INTPND);
+		__raw_writel(1 << offset, __SRCPND);
 	}
 }
 
@@ -197,7 +197,6 @@ void __init qin2440_init_irq(void)
 {
 	struct irq_domain *subeint_domain;
 	struct irq_domain *submisc_domain;
-    unsigned int virq;
 	int i;
 
 	/* all interrupts disable */

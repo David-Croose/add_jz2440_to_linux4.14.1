@@ -140,7 +140,7 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 	int count = 256;
 
 	if(port->x_char) {
-		UART_WRITE_REG(port->x_char, __UTXH0, b, port);
+		UART_WRITE_REG(port->x_char, __UTXH, b, port);
 		port->icount.tx++;
 		port->x_char = 0;
 		goto out;
@@ -155,7 +155,7 @@ static irqreturn_t qin2440_tx_chars(int irq, void *dev_id)
 		if(UART_READ_REG(__UFSTAT, l, port) & (1 << 14)) {
 			break;
 		}
-		UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH0, b, port);
+		UART_WRITE_REG(xmit->buf[xmit->tail], __UTXH, b, port);
 
 		xmit->tail = (xmit->tail + 1) & (UART_XMIT_SIZE - 1);
 		port->icount.tx++;
@@ -230,7 +230,6 @@ static int qin2440_startup(struct uart_port *port)
 {
 	struct qin2440_uart *parent_port = container_of(port, struct qin2440_uart, port);
 	int ret;
-	unsigned int reg;
 
 	ret = request_irq(port->irq, qin2440_rx_chars,
 					  0, "qin2440_uart_rxirq", port);

@@ -1707,21 +1707,28 @@ config SERIAL_OWL_CONSOLE
 	  Say 'Y' here if you wish to use Actions Semiconductor S500/S900 UART
 	  as the system console.
 
-config SERIAL_QIN2440
-	bool "QIN2440 serial support"
+choice
+	prompt "QIN2440 uart config"
+	help
+		Select polling or irq mode of QIN2440 uart.		
+
+config SERIAL_QIN2440_IRQ
+	bool "QIN2440 serial irq support"
 	select SERIAL_CORE
 	help
-	  Enable QIN2440 on-chip-serial port
+	  Enable QIN2440 on-chip-serial port, using irq
 	  
 config SERIAL_QIN2440_POLL
 	bool "QIN2440 serial poll support"
 	select SERIAL_CORE
 	help
 	  Enable QIN2440 on-chip-serial port, using timer poll for irq picture
+	  
+endchoice
 
 config SERIAL_QIN2440_CONSOLE
 	bool "QIN2440 serial colsole port"
-	depends on SERIAL_QIN2440
+	depends on SERIAL_QIN2440_IRQ || SERIAL_QIN2440_POLL
 	select SERIAL_CORE_CONSOLE
 	help
 	  Enable QIN2440 debug serial port
