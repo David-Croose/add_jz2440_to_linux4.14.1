@@ -223,7 +223,7 @@ struct irq_domain *__irq_domain_add(struct fwnode_handle *fwnode, int size,
 	list_add(&domain->link, &irq_domain_list);
 	mutex_unlock(&irq_domain_mutex);
 
-	pr_info("Added domain %s\n", domain->name);
+	pr_debug("Added domain %s\n", domain->name);
 	return domain;
 }
 EXPORT_SYMBOL_GPL(__irq_domain_add);
