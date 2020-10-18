@@ -59,8 +59,7 @@ static inline void s3c_irq_ack(struct irq_data *data)
     struct priv_irq_chip_data *d = irq_data_get_irq_chip_data(data);
     unsigned int pnd;
 
-    pnd = __raw_readl(d->reg_pending);
-    pnd |= 1UL << data->hwirq;		/* TODO  is the hwirq right? */
+    pnd = 1UL << data->hwirq;
     __raw_writel(pnd, d->reg_pending);
 }
 
