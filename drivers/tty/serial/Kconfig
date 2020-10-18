@@ -1716,7 +1716,8 @@ config SERIAL_QIN2440_IRQ
 	bool "QIN2440 serial irq support"
 	select SERIAL_CORE
 	help
-	  Enable QIN2440 on-chip-serial port, using irq
+	  Enable QIN2440 on-chip-serial port, using irq.
+	  Note, this driver is not finished yet!!!
 	  
 config SERIAL_QIN2440_POLL
 	bool "QIN2440 serial poll support"
