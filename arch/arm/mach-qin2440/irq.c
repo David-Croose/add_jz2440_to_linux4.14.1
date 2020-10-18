@@ -164,6 +164,7 @@ static int qin2440_irq_map(struct irq_domain *h, unsigned int virq,
 {
 	if (VIRQ_EINT0 <= virq && virq <= VIRQ_ADC) {
         irq_set_chip_data(virq, &parent_irq_chipdata);
+    	irq_set_chip_and_handler(virq, &s3c_irq_level_chip, handle_level_irq);
 
         /* setup the chain handler */
         if (virq == VIRQ_EINT4_7 || virq == VIRQ_EINT8_23
@@ -171,8 +172,6 @@ static int qin2440_irq_map(struct irq_domain *h, unsigned int virq,
 			|| virq == VIRQ_UART2 || virq == VIRQ_UART1
             || virq == VIRQ_UART0 || virq == VIRQ_ADC)
         	irq_set_chained_handler(virq, s3c_irq_demux);
-        else
-        	irq_set_chip_and_handler(virq, &s3c_irq_level_chip, handle_level_irq);
 	}
 
 	if (VIRQ_EINT4 <= virq && virq <= VIRQ_EINT23) {
